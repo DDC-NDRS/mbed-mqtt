@@ -18,18 +18,18 @@
 #ifndef MQTT_CLIENT_MBED_OS_H
 #define MQTT_CLIENT_MBED_OS_H
 
-#include <TCPSocket.h>
-#include <TLSSocket.h>
-#include <DTLSSocket.h>
-#include <UDPSocket.h>
+#include "netsocket/TCPSocket.h"
+#include "netsocket/TLSSocket.h"
+#include "netsocket/DTLSSocket.h"
+#include "netsocket/UDPSocket.h"
 #include "unity/unity.h"
 
 #include "FP.h"
-#include <MQTTPacket.h>
-#include <MQTTClient.h>
-#include <MQTTSNPacket.h>
-#include <MQTTSNClient.h>
-#include <MQTTmbed.h> // Countdown
+#include "../paho_mqtt_embedded_c/MQTTPacket/src/MQTTPacket.h"
+#include "../paho_mqtt_embedded_c/MQTTClient/src/MQTTClient.h"
+#include "../paho_mqtt-sn_embedded_c/MQTTSNPacket/src/MQTTSNPacket.h"
+#include "../paho_mqtt-sn_embedded_c/MQTTSNClient/src/MQTTSNClient.h"
+#include "mbed/MQTTmbed.h" // Countdown
 
 /**
  * @brief Implementation of the Network class template parameter of MQTTClient.
@@ -44,7 +44,9 @@ public:
      *
      * @param _socket socket to be used for MQTT communication.
      */
-    MQTTNetworkMbedOs(Socket *_socket) : socket(_socket) {}
+    explicit MQTTNetworkMbedOs(Socket* _socket) : socket(_socket) {
+        // pass
+    }
 
     /**
      * @brief Read data from the socket.
@@ -53,7 +55,7 @@ public:
      * @param len expected amount of bytes
      * @param timeout timeout for the operation
      */
-    int read(unsigned char *buffer, int len, int timeout);
+    int read(unsigned char* buffer, int len, int timeout);
 
     /**
      * @brief Write data to the socket.
@@ -62,7 +64,7 @@ public:
      * @param len amount of bytes to write
      * @param timeout timeout for the operation
      */
-    int write(unsigned char *buffer, int len, int timeout);
+    int write(unsigned char* buffer, int len, int timeout);
 
     /**
      * @brief Connect the socket to the hostname at a given port.
@@ -75,7 +77,7 @@ public:
      * IP address like "192.168.52.10" or domain address, like "mqtt.flespi.io"
      * @param port port number to be used for connection
      */
-    int connect(const char *hostname, int port);
+    int connect(const char* hostname, int port);
 
     /**
      * @brief Disconnect from the hostname.
@@ -96,9 +98,9 @@ private:
 class MQTTClient {
 public:
     /** MQTT message handler */
-    typedef void (*messageHandler)(MQTT::MessageData &);
+    using messageHandler = void (*)(MQTT::MessageData&);
     /** MQTT-SN message handler */
-    typedef void (*messageHandlerSN)(MQTTSN::MessageData &);
+    using messageHandlerSN = void (*)(MQTTSN::MessageData &);
 
     /**
      * @brief Constructor for the TCPSocket-based communication.
@@ -106,7 +108,7 @@ public:
      *
      * @param _socket socket to be used for communication
      */
-    MQTTClient(TCPSocket *_socket);
+    explicit MQTTClient(TCPSocket *_socket);
 #if defined(MBEDTLS_SSL_CLI_C) || defined(DOXYGEN_ONLY)
     /**
      * @brief Constructor for the TLSSocket-based communication.
@@ -114,7 +116,7 @@ public:
      *
      * @param _socket socket to be used for communication
      */
-    MQTTClient(TLSSocket *_socket);
+    explicit MQTTClient(TLSSocket *_socket);
 #endif
     /**
      * @brief Constructor for the UDPSocket-based communication.
@@ -122,7 +124,7 @@ public:
      *
      * @param _socket socket to be used for communication
      */
-    MQTTClient(UDPSocket *_socket);
+    explicit MQTTClient(UDPSocket *_socket);
 #if defined(MBEDTLS_SSL_CLI_C) || defined(DOXYGEN_ONLY)
     /**
      * @brief Constructor for the DTLSSocket-based communication.
@@ -130,7 +132,7 @@ public:
      *
      * @param _socket socket to be used for communication
      */
-    MQTTClient(DTLSSocket *_socket);
+    explicit MQTTClient(DTLSSocket *_socket);
 #endif
 
     /**

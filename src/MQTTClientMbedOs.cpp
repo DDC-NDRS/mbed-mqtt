@@ -18,199 +18,302 @@
 #include "MQTTClientMbedOs.h"
 #include "MQTTNetworkUtil.h"
 
-int MQTTNetworkMbedOs::read(unsigned char *buffer, int len, int timeout)
-{
-    return accumulate_mqtt_read(socket, buffer, len, timeout);
+int MQTTNetworkMbedOs::read(unsigned char* buffer, int len, int timeout) {
+    int rc;
+
+    rc = accumulate_mqtt_read(socket, buffer, len, timeout);
+
+    return (rc);
 }
 
-int MQTTNetworkMbedOs::write(unsigned char *buffer, int len, int timeout)
-{
-    return mqtt_write(socket, buffer, len, timeout);
+int MQTTNetworkMbedOs::write(unsigned char* buffer, int len, int timeout) {
+    int rc;
+
+    rc = mqtt_write(socket, buffer, len, timeout);
+
+    return (rc);
 }
 
-int MQTTNetworkMbedOs::connect(const char *hostname, int port)
-{
+int MQTTNetworkMbedOs::connect(const char* hostname, int port) {
+    nsapi_error_t ret;
+
     SocketAddress sockAddr(hostname, port);
-    return socket->connect(sockAddr);
+    ret = socket->connect(sockAddr);
+
+    return (static_cast<int>(ret));
 }
 
-int MQTTNetworkMbedOs::disconnect()
-{
-    return socket->close();
+int MQTTNetworkMbedOs::disconnect() {
+    nsapi_error_t ret;
+
+    ret = socket->close();
+
+    return (static_cast<int>(ret));
 }
 
-MQTTClient::MQTTClient(TCPSocket *_socket)
-{
+MQTTClient::MQTTClient(TCPSocket* _socket) {
     init(_socket);
+
     mqttNet = new MQTTNetworkMbedOs(socket);
-    client = new MQTT::Client<MQTTNetworkMbedOs, Countdown, MBED_CONF_MBED_MQTT_MAX_PACKET_SIZE, MBED_CONF_MBED_MQTT_MAX_CONNECTIONS>(*mqttNet);
-};
+    if (mqttNet != nullptr) {
+        client  = new MQTT::Client<MQTTNetworkMbedOs, Countdown, MBED_CONF_MBED_MQTT_MAX_PACKET_SIZE,
+                                   MBED_CONF_MBED_MQTT_MAX_CONNECTIONS>(*mqttNet);
+    }
+}
 
 #if defined(MBEDTLS_SSL_CLI_C) || defined(DOXYGEN_ONLY)
-MQTTClient::MQTTClient(TLSSocket *_socket)
-{
+MQTTClient::MQTTClient(TLSSocket* _socket) {
     init(_socket);
+
     mqttNet = new MQTTNetworkMbedOs(socket);
-    client = new MQTT::Client<MQTTNetworkMbedOs, Countdown, MBED_CONF_MBED_MQTT_MAX_PACKET_SIZE, MBED_CONF_MBED_MQTT_MAX_CONNECTIONS>(*mqttNet);
-};
+    if (mqttNet != nullptr) {
+        client = new MQTT::Client<MQTTNetworkMbedOs, Countdown, MBED_CONF_MBED_MQTT_MAX_PACKET_SIZE,
+                                  MBED_CONF_MBED_MQTT_MAX_CONNECTIONS>(*mqttNet);
+    }
+}
 #endif
 
-MQTTClient::MQTTClient(UDPSocket *_socket)
-{
+MQTTClient::MQTTClient(UDPSocket* _socket) {
     init(_socket);
+
     mqttNet = new MQTTNetworkMbedOs(socket);
-    clientSN = new MQTTSN::Client<MQTTNetworkMbedOs, Countdown, MBED_CONF_MBED_MQTT_MAX_PACKET_SIZE, MBED_CONF_MBED_MQTT_MAX_CONNECTIONS>(*mqttNet);
-};
+    if (mqttNet != nullptr) {
+        clientSN = new MQTTSN::Client<MQTTNetworkMbedOs, Countdown, MBED_CONF_MBED_MQTT_MAX_PACKET_SIZE,
+                                      MBED_CONF_MBED_MQTT_MAX_CONNECTIONS>(*mqttNet);
+    }
+}
 
 #if defined(MBEDTLS_SSL_CLI_C) || defined(DOXYGEN_ONLY)
-MQTTClient::MQTTClient(DTLSSocket *_socket)
-{
+MQTTClient::MQTTClient(DTLSSocket* _socket) {
     init(_socket);
+
     mqttNet = new MQTTNetworkMbedOs(socket);
-    clientSN = new MQTTSN::Client<MQTTNetworkMbedOs, Countdown, MBED_CONF_MBED_MQTT_MAX_PACKET_SIZE, MBED_CONF_MBED_MQTT_MAX_CONNECTIONS>(*mqttNet);
-};
+    if (mqttNet != nullptr) {
+        clientSN = new MQTTSN::Client<MQTTNetworkMbedOs, Countdown, MBED_CONF_MBED_MQTT_MAX_PACKET_SIZE,
+                                      MBED_CONF_MBED_MQTT_MAX_CONNECTIONS>(*mqttNet);
+    }
+}
 #endif
 
-MQTTClient::~MQTTClient()
-{
+MQTTClient::~MQTTClient() {
     delete mqttNet;
-    if (client != NULL) delete client;
-    if (clientSN != NULL) delete clientSN;
-}
 
-nsapi_error_t MQTTClient::connect(MQTTPacket_connectData &options)
-{
-    if (client == NULL) {
-        return NSAPI_ERROR_NO_CONNECTION;
+    if (client != nullptr) {
+        delete client;
     }
-    nsapi_error_t ret = client->connect(options);
-    return ret < 0 ? NSAPI_ERROR_NO_CONNECTION : ret;
-}
 
-nsapi_error_t MQTTClient::connect(MQTTSNPacket_connectData &options)
-{
-    if (clientSN == NULL) {
-        return NSAPI_ERROR_NO_CONNECTION;
+    if (clientSN != nullptr) {
+        delete clientSN;
     }
-    nsapi_error_t ret = clientSN->connect(options);
-    return ret < 0 ? NSAPI_ERROR_NO_CONNECTION : ret;
 }
 
-nsapi_error_t MQTTClient::publish(const char *topicName, MQTT::Message &message)
-{
-    if (client == NULL) {
-        return NSAPI_ERROR_NO_CONNECTION;
+nsapi_error_t MQTTClient::connect(MQTTPacket_connectData& options) {
+    nsapi_error_t ret;
+
+    if (client == nullptr) {
+        ret = NSAPI_ERROR_NO_CONNECTION;
     }
-    nsapi_error_t ret = client->publish(topicName, message);
-    return ret < 0 ? NSAPI_ERROR_NO_CONNECTION : ret;
-}
-
-nsapi_error_t MQTTClient::publish(MQTTSN_topicid &topicName, MQTTSN::Message &message)
-{
-    if (clientSN == NULL) {
-        return NSAPI_ERROR_NO_CONNECTION;
+    else {
+        ret = client->connect(options);
+        if (ret < 0) {
+            ret = NSAPI_ERROR_NO_CONNECTION;
+        }
     }
-    nsapi_error_t ret = clientSN->publish(topicName, message);
-    return ret < 0 ? NSAPI_ERROR_NO_CONNECTION : ret;
+
+    return (ret);
 }
 
-nsapi_error_t MQTTClient::subscribe(const char *topicFilter, enum MQTT::QoS qos, messageHandler mh)
-{
-    if (client == NULL) {
-        return NSAPI_ERROR_NO_CONNECTION;
+nsapi_error_t MQTTClient::connect(MQTTSNPacket_connectData& options) {
+    nsapi_error_t ret;
+
+    if (clientSN == nullptr) {
+        ret = NSAPI_ERROR_NO_CONNECTION;
     }
-    nsapi_error_t ret = client->subscribe(topicFilter, qos, mh);
-    return ret < 0 ? NSAPI_ERROR_NO_CONNECTION : ret;
-}
-
-nsapi_error_t MQTTClient::subscribe(MQTTSN_topicid &topicFilter, enum MQTTSN::QoS qos, messageHandlerSN mh)
-{
-    if (clientSN == NULL) {
-        return NSAPI_ERROR_NO_CONNECTION;
+    else {
+        ret = clientSN->connect(options);
+        if (ret < 0) {
+            ret = NSAPI_ERROR_NO_CONNECTION;
+        }
     }
-    nsapi_error_t ret = clientSN->subscribe(topicFilter, qos, mh);
-    return ret < 0 ? NSAPI_ERROR_NO_CONNECTION : ret;
+
+    return (ret);
 }
 
-nsapi_error_t MQTTClient::unsubscribe(const char *topicFilter)
-{
-    if (client == NULL) {
-        return NSAPI_ERROR_NO_CONNECTION;
+nsapi_error_t MQTTClient::publish(const char* topicName, MQTT::Message& message) {
+    nsapi_error_t ret;
+
+    if (client == nullptr) {
+        ret = NSAPI_ERROR_NO_CONNECTION;
     }
-    nsapi_error_t ret = client->unsubscribe(topicFilter);
-    return ret < 0 ? NSAPI_ERROR_NO_CONNECTION : ret;
-}
-
-nsapi_error_t MQTTClient::unsubscribe(MQTTSN_topicid &topicFilter)
-{
-    if (clientSN == NULL) {
-        return NSAPI_ERROR_NO_CONNECTION;
+    else {
+        ret = client->publish(topicName, message);
+        if (ret < 0) {
+            ret = NSAPI_ERROR_NO_CONNECTION;
+        }
     }
-    nsapi_error_t ret = clientSN->unsubscribe(topicFilter);
-    return ret < 0 ? NSAPI_ERROR_NO_CONNECTION : ret;
+
+    return (ret);
 }
 
-nsapi_error_t MQTTClient::yield(unsigned long timeout_ms)
-{
-    nsapi_error_t ret = NSAPI_ERROR_OK;
-    if (client != NULL) {
+nsapi_error_t MQTTClient::publish(MQTTSN_topicid& topicName, MQTTSN::Message& message) {
+    nsapi_error_t ret;
+
+    if (clientSN == nullptr) {
+        ret = NSAPI_ERROR_NO_CONNECTION;
+    }
+    else {
+        ret = clientSN->publish(topicName, message);
+        if (ret < 0) {
+            ret = NSAPI_ERROR_NO_CONNECTION;
+        }
+    }
+
+    return (ret);
+}
+
+nsapi_error_t MQTTClient::subscribe(const char* topicFilter, enum MQTT::QoS qos, messageHandler mh) {
+    nsapi_error_t ret;
+
+    if (client == nullptr) {
+        ret = NSAPI_ERROR_NO_CONNECTION;
+    }
+    else {
+        ret = client->subscribe(topicFilter, qos, mh);
+        if (ret < 0) {
+            ret = NSAPI_ERROR_NO_CONNECTION;
+        }
+    }
+
+    return (ret);
+}
+
+nsapi_error_t MQTTClient::subscribe(MQTTSN_topicid& topicFilter, enum MQTTSN::QoS qos, messageHandlerSN mh) {
+    nsapi_error_t ret;
+
+    if (clientSN == nullptr) {
+        ret = NSAPI_ERROR_NO_CONNECTION;
+    }
+    else {
+        ret = clientSN->subscribe(topicFilter, qos, mh);
+        if (ret < 0) {
+            ret = NSAPI_ERROR_NO_CONNECTION;
+        }
+    }
+
+    return (ret);
+}
+
+nsapi_error_t MQTTClient::unsubscribe(const char* topicFilter) {
+    nsapi_error_t ret;
+
+    if (client == nullptr) {
+        ret = NSAPI_ERROR_NO_CONNECTION;
+    }
+    else {
+        ret = client->unsubscribe(topicFilter);
+        if (ret < 0) {
+            ret = NSAPI_ERROR_NO_CONNECTION;
+        }
+    }
+
+    return (ret);
+}
+
+nsapi_error_t MQTTClient::unsubscribe(MQTTSN_topicid& topicFilter) {
+    nsapi_error_t ret;
+
+    if (clientSN == nullptr) {
+        ret = NSAPI_ERROR_NO_CONNECTION;
+    }
+    else {
+        ret = clientSN->unsubscribe(topicFilter);
+        if (ret < 0) {
+            ret = NSAPI_ERROR_NO_CONNECTION;
+        }
+    }
+
+    return (ret);
+}
+
+nsapi_error_t MQTTClient::yield(unsigned long timeout_ms) {
+    nsapi_error_t ret;
+
+    if (client != nullptr) {
         ret = client->yield(timeout_ms);
-    } else if (clientSN != NULL) {
+    }
+    else if (clientSN != nullptr) {
         ret = clientSN->yield(timeout_ms);
-    } else {
-        return NSAPI_ERROR_NO_CONNECTION;
     }
-    return ret < 0 ? NSAPI_ERROR_NO_CONNECTION : ret;
+    else {
+        ret = NSAPI_ERROR_NO_CONNECTION;
+    }
+
+    return (ret);
 }
 
-nsapi_error_t MQTTClient::disconnect()
-{
-    nsapi_error_t ret = NSAPI_ERROR_OK;
-    if (client != NULL) {
+nsapi_error_t MQTTClient::disconnect() {
+    nsapi_error_t ret;
+
+    if (client != nullptr) {
         ret = client->disconnect();
-    } else if (clientSN != NULL) {
+    }
+    else if (clientSN != nullptr) {
         ret = clientSN->disconnect(0);
-    } else {
-        return NSAPI_ERROR_NO_CONNECTION;
     }
-    return ret < 0 ? NSAPI_ERROR_NO_CONNECTION : ret;
+    else {
+        ret = NSAPI_ERROR_NO_CONNECTION;
+    }
+
+    return (ret);
 }
 
-bool MQTTClient::isConnected()
-{
-    if ((client == NULL && clientSN == NULL) || 
-            (client != NULL && clientSN != NULL)){
-        return false;
-    } else if( client != NULL) {
-        return client->isConnected();
-    } else {
-        return clientSN->isConnected();
+bool MQTTClient::isConnected() {
+    bool rc;
+
+    if (((client == nullptr) && (clientSN == nullptr)) ||
+        ((client != nullptr) && (clientSN != nullptr))) {
+        rc = false;
     }
+    else if (client != nullptr) {
+        rc = client->isConnected();
+    }
+    else {
+        rc = clientSN->isConnected();
+    }
+
+    return (rc);
 }
 
-void MQTTClient::setDefaultMessageHandler(messageHandler mh)
-{
-    if (client != NULL) {
+void MQTTClient::setDefaultMessageHandler(messageHandler mh) {
+    if (client != nullptr) {
         client->setDefaultMessageHandler(mh);
-    } else if (clientSN != NULL) {
+    }
+    else if (clientSN != nullptr) {
         client->setDefaultMessageHandler(mh);
     }
-}
-
-nsapi_error_t MQTTClient::setMessageHandler(const char *topicFilter, messageHandler mh)
-{
-    if (clientSN != NULL) {
-        return NSAPI_ERROR_UNSUPPORTED;
-    } else if (client == NULL) {
-        return NSAPI_ERROR_NO_CONNECTION;
-    } else {
-        return client->setMessageHandler(topicFilter, mh);
+    else {
+        // pass
     }
 }
 
-void MQTTClient::init(Socket *sock)
-{
-    socket = sock;
-    client = NULL;
-    clientSN = NULL;
+nsapi_error_t MQTTClient::setMessageHandler(const char* topicFilter, messageHandler mh) {
+    nsapi_error_t ret;
+
+    if (clientSN != nullptr) {
+        ret = NSAPI_ERROR_UNSUPPORTED;
+    }
+    else if (client == nullptr) {
+        ret = NSAPI_ERROR_NO_CONNECTION;
+    }
+    else {
+        ret = client->setMessageHandler(topicFilter, mh);
+    }
+
+    return (ret);
+}
+
+void MQTTClient::init(Socket* sock) {
+    socket   = sock;
+    client   = nullptr;
+    clientSN = nullptr;
 }

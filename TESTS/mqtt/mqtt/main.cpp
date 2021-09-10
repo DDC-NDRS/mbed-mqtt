@@ -18,7 +18,7 @@
 #include "mbed.h"
 #include "mqtt_tests.h"
 #include "greentea-client/test_env.h"
-#include "utest.h"
+#include "utest/utest.h"
 
 using namespace utest::v1;
 

@@ -18,8 +18,8 @@
 #ifndef _MQTTNETWORKTLS_H_
 #define _MQTTNETWORKTLS_H_
 
-#include "NetworkInterface.h"
-#include "TLSSocket.h"
+#include "netsocket/NetworkInterface.h"
+#include "netsocket/TLSSocket.h"
 #include "MQTTNetworkUtil.h"
 
 #if defined(MBEDTLS_SSL_CLI_C) || defined(DOXYGEN_ONLY)

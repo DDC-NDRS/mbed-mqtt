@@ -227,17 +227,23 @@ int MQTTSNSerialize_register(unsigned char* buf, int buflen, unsigned short topi
 		MQTTSNString* topicname)
 {
 	unsigned char *ptr = buf;
-	int len = 0;
+	int len;
 	int rc = 0;
-	int topicnamelen = 0;
+	int topicnamelen;
 
 	FUNC_ENTRY;
-	topicnamelen = (topicname->cstring) ? strlen(topicname->cstring) : topicname->lenstring.len;
-	if ((len = MQTTSNPacket_len(MQTTSNSerialize_registerLength(topicnamelen))) > buflen)
-	{
-		rc = MQTTSNPACKET_BUFFER_TOO_SHORT;
-		goto exit;
+	if (topicname->cstring != NULL) {
+	    topicnamelen = (int)strlen(topicname->cstring);
 	}
+	else {
+	    topicnamelen = topicname->lenstring.len;
+	}
+
+	len = MQTTSNPacket_len(MQTTSNSerialize_registerLength(topicnamelen));
+    if (len > buflen) {
+        rc = MQTTSNPACKET_BUFFER_TOO_SHORT;
+        goto exit;
+    }
 	ptr += MQTTSNPacket_encode(ptr, len);  /* write length */
 	writeChar(&ptr, MQTTSN_REGISTER);      /* write message type */
 

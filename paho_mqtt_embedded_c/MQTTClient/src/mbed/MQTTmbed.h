@@ -19,45 +19,47 @@
 #define MQTT_MBED_H
 
 #include "mbed.h"
+#include <chrono>
 
-class Countdown
-{
-public:
-    Countdown() : t()
-    {
-
+class Countdown {
+public :
+    explicit Countdown() : t() {
+        // pass
     }
 
-    Countdown(int ms) : t()
-    {
+    explicit Countdown(int ms) : t() {
         countdown_ms(ms);
     }
 
 
-    bool expired()
-    {
-        return t.read_ms() >= interval_end_ms;
+    bool expired(void) {
+        unsigned long t_ms;
+
+        t_ms = std::chrono::duration_cast<std::chrono::duration<unsigned long, milli>>(t.elapsed_time()).count();
+
+        return (t_ms >= interval_end_ms);
     }
 
-    void countdown_ms(unsigned long ms)
-    {
+    void countdown_ms(unsigned long ms) {
         t.stop();
         interval_end_ms = ms;
         t.reset();
         t.start();
     }
 
-    void countdown(int seconds)
-    {
+    void countdown(int seconds) {
         countdown_ms((unsigned long)seconds * 1000L);
     }
 
-    int left_ms()
-    {
-        return interval_end_ms - t.read_ms();
+    int left_ms(void) {
+        unsigned long t_ms;
+
+        t_ms = std::chrono::duration_cast<std::chrono::duration<unsigned long, milli>>(t.elapsed_time()).count();
+
+        return (interval_end_ms - t_ms);
     }
 
-private:
+private :
     Timer t;
     unsigned long interval_end_ms;
 };

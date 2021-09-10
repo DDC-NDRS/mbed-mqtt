@@ -18,8 +18,8 @@
 #ifndef _MQTTNETWORK_H_
 #define _MQTTNETWORK_H_
 
-#include "NetworkInterface.h"
-#include "TCPSocket.h"
+#include "netsocket/NetworkInterface.h"
+#include "netsocket/TCPSocket.h"
 #include "MQTTNetworkUtil.h"
 
 class MQTTNetwork {

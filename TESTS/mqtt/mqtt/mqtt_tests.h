@@ -18,7 +18,7 @@
 #ifndef MQTT_TESTS_H
 #define MQTT_TESTS_H
 
-#include <MQTTClientMbedOs.h>
+#include "../../../src/MQTTClientMbedOs.h"
 
 #include "unity/unity.h"
 

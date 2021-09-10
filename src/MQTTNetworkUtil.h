@@ -18,6 +18,8 @@
 #ifndef _MQTTNETWORK_UTIL_H_
 #define _MQTTNETWORK_UTIL_H_
 
+#include "netsocket/nsapi_types.h"
+
 /* MQTT doesn't expect nsapi error values so we translate them */
 static int convert_nsapi_error_to_mqtt_error(int nsapi_error)
 {

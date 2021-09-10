@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include <MQTTClientMbedOs.h>
+#include "../../../src/MQTTClientMbedOs.h"
 #include "mqtt_tests.h"
 #include "unity/unity.h"
 
@@ -46,7 +46,7 @@ void MQTT_CONNECT()
 
 void MQTT_CONNECT_NOT_CONNECTED()
 {
-    NetworkInterface *net = NetworkInterface::get_default_instance();
+    NetworkInterface* net = NetworkInterface::get_default_instance();
     SocketAddress sockAddr(mqtt_global::hostname, mqtt_global::port);
     TCPSocket socket;
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, socket.open(net));

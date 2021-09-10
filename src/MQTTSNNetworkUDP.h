@@ -18,7 +18,7 @@
 #ifndef _MQTTNETWORKUDP_H_
 #define _MQTTNETWORKUDP_H_
 
-#include "UDPSocket.h"
+#include "netsocket/UDPSocket.h"
 #include "MQTTNetworkUtil.h"
 
 class MQTTSNNetworkUDP {

@@ -51,7 +51,12 @@
 #define MAX_MESSAGE_HANDLERS 5 /* redefinable - how many subscriptions do you want? */
 #endif
 
-enum QoS { QOS0, QOS1, QOS2, SUBFAIL=0x80 };
+enum QoS {
+    QOS0,
+    QOS1,
+    QOS2,
+    SUBFAIL = 0x80
+};
 
 /* all failure return codes must be negative */
 enum returnCode { BUFFER_OVERFLOW = -2, FAILURE = -1, SUCCESS = 0 };
@@ -145,7 +150,7 @@ DLLExport void MQTTClientInit(MQTTClient* client, Network* network, unsigned int
 		unsigned char* sendbuf, size_t sendbuf_size, unsigned char* readbuf, size_t readbuf_size);
 
 /** MQTT Connect - send an MQTT connect packet down the network and wait for a Connack
- *  The nework object must be connected to the network endpoint before calling this
+ *  The network object must be connected to the network endpoint before calling this
  *  @param options - connect options
  *  @return success code
  */
@@ -153,7 +158,7 @@ DLLExport int MQTTConnectWithResults(MQTTClient* client, MQTTPacket_connectData*
     MQTTConnackData* data);
 
 /** MQTT Connect - send an MQTT connect packet down the network and wait for a Connack
- *  The nework object must be connected to the network endpoint before calling this
+ *  The network object must be connected to the network endpoint before calling this
  *  @param options - connect options
  *  @return success code
  */
