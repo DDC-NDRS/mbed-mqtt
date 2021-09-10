@@ -21,16 +21,17 @@
 #include "netsocket/nsapi_types.h"
 
 /* MQTT doesn't expect nsapi error values so we translate them */
-static int convert_nsapi_error_to_mqtt_error(int nsapi_error)
-{
+static int convert_nsapi_error_to_mqtt_error(int nsapi_error) {
     if (nsapi_error == NSAPI_ERROR_WOULD_BLOCK) {
         /* MQTT expects 0 on timeout */
-        return 0;
-    } else if (nsapi_error == 0) {
-        /* MQTT expect -1 on closed sockets */
-        return -1;
+        return (0);
     }
-    return nsapi_error;
+    else if (nsapi_error == 0) {
+        /* MQTT expect -1 on closed sockets */
+        return (-1);
+    }
+
+    return (nsapi_error);
 }
 
 /** Reads data and returns number of bytes read or a translated error that MQTT expects. This will call
@@ -44,23 +45,26 @@ static int convert_nsapi_error_to_mqtt_error(int nsapi_error)
  * @return Always returns the full length if successful or an error.
  */
 template<typename SocketType>
-static int accumulate_mqtt_read(SocketType socket, unsigned char *buffer, int len, int timeout)
-{
-    /* TODO: Timout should be applied to whole operation not partial recv */
+static int accumulate_mqtt_read(SocketType socket, unsigned char* buffer, int len, int timeout) {
+    int ret;
+
+    /* TODO: Timeout should be applied to whole operation not partial recv */
     socket->set_timeout(timeout);
 
     /* MQTT Client expects the full packet so we accumulate until we get all bytes */
     int remaining = len;
     while (remaining) {
-        int ret = socket->recv(buffer, remaining);
+        ret = socket->recv(buffer, remaining);
         if (ret > 0) {
             remaining -= ret;
             buffer += ret;
-        } else {
+        }
+        else {
             return convert_nsapi_error_to_mqtt_error(ret);
         }
     }
-    return len;
+
+    return (len);
 }
 
 /** Sends data and returns number of bytes sent or a translated error that MQTT expects.
@@ -73,15 +77,19 @@ static int accumulate_mqtt_read(SocketType socket, unsigned char *buffer, int le
  * @return Always returns the full length if successful or an error.
  */
 template<typename SocketType>
-static int mqtt_write(SocketType socket, unsigned char *buffer, int len, int timeout)
-{
+static int mqtt_write(SocketType socket, unsigned char* buffer, int len, int timeout) {
+    int ret;
+
     socket->set_timeout(timeout);
-    int ret = socket->send(buffer, len);
+    ret = socket->send(buffer, len);
     if (ret > 0) {
-        return ret;
-    } else {
-        return convert_nsapi_error_to_mqtt_error(ret);
+        // pass
     }
+    else {
+        ret = convert_nsapi_error_to_mqtt_error(ret);
+    }
+
+    return (ret);
 }
 
 #endif // _MQTTNETWORK_UTIL_H_

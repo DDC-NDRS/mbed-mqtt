@@ -55,8 +55,8 @@ int MQTTSerialize_publishLength(int qos, MQTTString topicName, int payloadlen)
 int MQTTSerialize_publish(unsigned char* buf, int buflen, unsigned char dup, int qos, unsigned char retained, unsigned short packetid,
 		MQTTString topicName, unsigned char* payload, int payloadlen)
 {
-	unsigned char *ptr = buf;
-	MQTTHeader header = {0};
+    unsigned char* ptr = buf;
+	MQTTHeader header;
 	int rem_len = 0;
 	int rc = 0;
 
@@ -103,7 +103,7 @@ exit:
   */
 int MQTTSerialize_ack(unsigned char* buf, int buflen, unsigned char packettype, unsigned char dup, unsigned short packetid)
 {
-	MQTTHeader header = {0};
+	MQTTHeader header;
 	int rc = 0;
 	unsigned char *ptr = buf;
 
@@ -113,6 +113,8 @@ int MQTTSerialize_ack(unsigned char* buf, int buflen, unsigned char packettype, 
 		rc = MQTTPACKET_BUFFER_TOO_SHORT;
 		goto exit;
 	}
+
+	header.byte = 0;
 	header.bits.type = packettype;
 	header.bits.dup = dup;
 	header.bits.qos = (packettype == PUBREL) ? 1 : 0;

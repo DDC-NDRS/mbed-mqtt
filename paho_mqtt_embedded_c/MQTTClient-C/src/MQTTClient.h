@@ -78,13 +78,12 @@ extern void TimerCountdownMS(Timer*, unsigned int);
 extern void TimerCountdown(Timer*, unsigned int);
 extern int TimerLeftMS(Timer*);
 
-typedef struct MQTTMessage
-{
+typedef struct MQTTMessage {
     enum QoS qos;
     unsigned char retained;
     unsigned char dup;
     unsigned short id;
-    void *payload;
+    void* payload;
     size_t payloadlen;
 } MQTTMessage;
 

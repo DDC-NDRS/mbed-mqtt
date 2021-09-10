@@ -2,14 +2,12 @@
 #define MQTTSOCKET_H
 
 #include "MQTTmbed.h"
-#include <EthernetInterface.h>
-#include <Timer.h>
+#include "netsocket/EthernetInterface.h"
+#include "drivers/Timer.h"
 
-class MQTTSocket
-{
+class MQTTSocket {
 public:
-    MQTTSocket(EthernetInterface *anet)
-    {
+    explicit MQTTSocket(EthernetInterface* anet) {
         net = anet;
         open = false;
     }

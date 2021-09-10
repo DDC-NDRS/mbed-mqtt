@@ -3,26 +3,21 @@
 #define MQTTETHERNET_H
 
 #include "MQTTmbed.h"
-#include "EthernetInterface.h"
+#include "netsocket/EthernetInterface.h"
 #include "MQTTSocket.h"
 
-class MQTTEthernet : public MQTTSocket
-{
-public:    
-    MQTTEthernet() : MQTTSocket(&eth)
-    {
+class MQTTEthernet : public MQTTSocket {
+public :
+    MQTTEthernet() : MQTTSocket(&eth) {
         eth.connect();
     }
-    
-    EthernetInterface& getEth()
-    {
-        return eth;
-    }
-    
-private:
 
+    EthernetInterface& getEth() {
+        return (eth);
+    }
+
+private :
     EthernetInterface eth;
-    
 };
 
 

@@ -217,13 +217,13 @@ public:
      * @brief Disconnect from a broker, that the client has been connected to.
      * @retval NSAPI_ERROR_OK on success, error code on failure
      */
-    nsapi_error_t disconnect();
+    nsapi_error_t disconnect(void);
 
     /**
      * @brief Check whether client is connected to a broker.
      * @retval true if the client is connected, false otherwise
      */
-    bool isConnected();
+    bool isConnected(void);
 
     /** Set the default message handling callback - used for any message which does not match a subscription message handler
      *  @param mh - pointer to the callback function.  Set to 0 to remove.
@@ -240,14 +240,16 @@ private:
     /**
      * @brief Helper function to initialize member variables.
      */
-    void init(Socket *sock);
+    void init(Socket* sock);
 
-    Socket *socket;
-    MQTTNetworkMbedOs *mqttNet;
-    NetworkInterface *net;
+    Socket* socket;
+    MQTTNetworkMbedOs* mqttNet;
+    NetworkInterface* net;
 
-    MQTT::Client<MQTTNetworkMbedOs, Countdown, MBED_CONF_MBED_MQTT_MAX_PACKET_SIZE, MBED_CONF_MBED_MQTT_MAX_CONNECTIONS> *client;
-    MQTTSN::Client<MQTTNetworkMbedOs, Countdown, MBED_CONF_MBED_MQTT_MAX_PACKET_SIZE, MBED_CONF_MBED_MQTT_MAX_CONNECTIONS> *clientSN;
+    MQTT::Client<MQTTNetworkMbedOs, Countdown, MBED_CONF_MBED_MQTT_MAX_PACKET_SIZE,
+                 MBED_CONF_MBED_MQTT_MAX_CONNECTIONS>* client;
+    MQTTSN::Client<MQTTNetworkMbedOs, Countdown, MBED_CONF_MBED_MQTT_MAX_PACKET_SIZE,
+                   MBED_CONF_MBED_MQTT_MAX_CONNECTIONS>* clientSN;
 };
 
 #endif // MQTT_CLIENT_MBED_OS_H

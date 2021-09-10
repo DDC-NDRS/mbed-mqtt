@@ -251,7 +251,7 @@ nsapi_error_t MQTTClient::yield(unsigned long timeout_ms) {
     return (ret);
 }
 
-nsapi_error_t MQTTClient::disconnect() {
+nsapi_error_t MQTTClient::disconnect(void) {
     nsapi_error_t ret;
 
     if (client != nullptr) {
@@ -267,7 +267,7 @@ nsapi_error_t MQTTClient::disconnect() {
     return (ret);
 }
 
-bool MQTTClient::isConnected() {
+bool MQTTClient::isConnected(void) {
     bool rc;
 
     if (((client == nullptr) && (clientSN == nullptr)) ||

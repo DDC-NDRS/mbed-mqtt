@@ -50,7 +50,7 @@ int MQTTPacket_checkVersion(MQTTString* protocol, int version)
   */
 int MQTTDeserialize_connect(MQTTPacket_connectData* data, unsigned char* buf, int len)
 {
-	MQTTHeader header = {0};
+	MQTTHeader header;
 	MQTTConnectFlags flags = {0};
 	unsigned char* curdata = buf;
 	unsigned char* enddata = &buf[len];
@@ -118,7 +118,7 @@ exit:
   */
 int MQTTSerialize_connack(unsigned char* buf, int buflen, unsigned char connack_rc, unsigned char sessionPresent)
 {
-	MQTTHeader header = {0};
+	MQTTHeader header;
 	int rc = 0;
 	unsigned char *ptr = buf;
 	MQTTConnackFlags flags = {0};

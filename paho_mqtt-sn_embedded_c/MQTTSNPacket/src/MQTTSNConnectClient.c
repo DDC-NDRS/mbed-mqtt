@@ -134,19 +134,20 @@ int MQTTSNSerialize_disconnect(unsigned char* buf, int buflen, int duration)
 {
 	int rc = -1;
 	unsigned char *ptr = buf;
-	int len = 0;
+	int len;
 
 	FUNC_ENTRY;
-	if ((len = MQTTSNPacket_len(MQTTSNSerialize_disconnectLength(duration))) > buflen)
-	{
-		rc = MQTTSNPACKET_BUFFER_TOO_SHORT;
-		goto exit;
-	}
+	len = MQTTSNPacket_len(MQTTSNSerialize_disconnectLength(duration));
+    if (len > buflen) {
+        rc = MQTTSNPACKET_BUFFER_TOO_SHORT;
+        goto exit;
+    }
 	ptr += MQTTSNPacket_encode(ptr, len); /* write length */
 	writeChar(&ptr, MQTTSN_DISCONNECT);      /* write message type */
 
-	if (duration > 0)
+	if (duration > 0) {
 		writeInt(&ptr, duration);
+	}
 
 	rc = ptr - buf;
 exit:

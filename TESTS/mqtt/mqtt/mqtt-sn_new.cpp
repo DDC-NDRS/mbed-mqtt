@@ -17,7 +17,7 @@
 
 #include "mqtt_tests.h"
 
-#include <MQTTClientMbedOs.h>
+#include "../../../src/MQTTClientMbedOs.h"
 
 #define MQTTSN_API_INIT() \
     arrivedcountSN = 0; \

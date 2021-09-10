@@ -43,6 +43,7 @@ static int sendPacket(MQTTClient* c, int length, Timer* timer)
             break;
         sent += rc;
     }
+
     if (sent == length)
     {
         TimerCountdown(&c->last_sent, c->keepAliveInterval); // record the fact that we have successfully sent the packet
