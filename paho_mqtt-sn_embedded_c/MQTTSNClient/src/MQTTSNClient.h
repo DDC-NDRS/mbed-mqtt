@@ -17,6 +17,7 @@
 #if !defined(MQTTSNCLIENT_H)
 #define MQTTSNCLIENT_H
 
+#include "MQTTSNTypeDef.hpp"
 #include "FP.h"
 #include "MQTTSNPacket.h"
 #include "stdio.h"
@@ -40,55 +41,10 @@
     #define MQTTSNCLIENT_QOS2 0
 #endif
 
+extern int MQTTSNDeserialize_publish(MQTTSN::Message& msg, MQTTSN_topicid* topic, unsigned char* buf, int buflen);
+
 namespace MQTTSN
 {
-
-
-enum QoS { QOS0, QOS1, QOS2 };
-
-// all failure return codes must be negative
-enum returnCode { MAX_SUBSCRIPTIONS_EXCEEDED = -3, BUFFER_OVERFLOW = -2, FAILURE = -1, SUCCESS = 0 };
-
-
-struct Message
-{
-    enum QoS qos;
-    bool retained;
-    bool dup;
-    unsigned short id;
-    void *payload;
-    size_t payloadlen;
-};
-
-
-struct MessageData
-{
-    MessageData(MQTTSN_topicid &aTopic, struct Message &aMessage)  : message(aMessage), topic(aTopic)
-    { }
-
-    struct Message &message;
-    MQTTSN_topicid &topic;
-};
-
-
-class PacketId
-{
-public:
-    PacketId()
-    {
-        next = 0;
-    }
-
-    int getNext()
-    {
-        return next = (next == MAX_PACKET_ID) ? 1 : next + 1;
-    }
-
-private:
-    static const int MAX_PACKET_ID = 65535;
-    int next;
-};
-
 
 /**
  * @class MQTTSNClient
@@ -112,7 +68,7 @@ public:
      *      before calling MQTT connect
      *  @param limits an instance of the Limit class - to alter limits as required
      */
-    Client(Network& network, unsigned int command_timeout_ms = 30000);
+    explicit Client(Network& network, unsigned int command_timeout_ms = 30000);
 
     /** Set the default message handling callback - used for any message which does not match a subscription message handler
      *  @param mh - pointer to the callback function
@@ -537,9 +493,8 @@ int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::cycle(Timer& timer) {
         case MQTTSN_PUBLISH :
             MQTTSN_topicid topicid;
             Message msg;
-            if (MQTTSNDeserialize_publish((unsigned char*)&msg.dup, (int*)&msg.qos, (unsigned char*)&msg.retained,
-                                          (unsigned short*)&msg.id, &topicid, (unsigned char**)&msg.payload,
-                                          (int*)&msg.payloadlen, readbuf, MAX_PACKET_SIZE) != 1) {
+
+            if (MQTTSNDeserialize_publish(msg, &topicid, readbuf, MAX_PACKET_SIZE) != 1) {
                 goto exit;
             }
 

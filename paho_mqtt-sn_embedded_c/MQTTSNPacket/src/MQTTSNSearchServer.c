@@ -63,7 +63,7 @@ exit:
 int MQTTSNDeserialize_searchgw(unsigned char* radius, unsigned char* buf, int buflen)
 {
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = 0;
 	int mylen = 0;
 

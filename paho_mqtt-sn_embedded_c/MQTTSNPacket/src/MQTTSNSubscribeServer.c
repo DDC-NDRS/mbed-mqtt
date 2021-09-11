@@ -34,7 +34,7 @@ int MQTTSNDeserialize_subscribe(unsigned char* dup, int* qos, unsigned short* pa
 {
 	MQTTSNFlags flags;
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = 0;
 	int mylen = 0;
 

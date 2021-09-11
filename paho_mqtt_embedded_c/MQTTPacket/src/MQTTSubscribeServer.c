@@ -37,7 +37,7 @@ int MQTTDeserialize_subscribe(unsigned char* dup, unsigned short* packetid, int 
 {
 	MQTTHeader header;
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = -1;
 	int mylen = 0;
 
@@ -48,7 +48,7 @@ int MQTTDeserialize_subscribe(unsigned char* dup, unsigned short* packetid, int 
 	*dup = header.bits.dup;
 
 	curdata += (rc = MQTTPacket_decodeBuf(curdata, &mylen)); /* read remaining length */
-	enddata = curdata + mylen;
+	enddata  = curdata + mylen;
 
 	*packetid = readInt(&curdata);
 

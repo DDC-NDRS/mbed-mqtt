@@ -85,7 +85,7 @@ exit:
 int MQTTSNDeserialize_connack(int* connack_rc, unsigned char* buf, int buflen)
 {
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = 0;
 	int mylen;
 
@@ -196,7 +196,7 @@ exit:
 int MQTTSNDeserialize_pingresp(unsigned char* buf, int buflen)
 {
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = 0;
 	int mylen;
 
@@ -353,7 +353,7 @@ int MQTTSNSerialize_willmsgupd(unsigned char* buf, int buflen, MQTTSNString will
 int MQTTSNDeserialize_willtopicreq(unsigned char* buf, int buflen)
 {
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = -1;
 	int mylen;
 
@@ -388,7 +388,7 @@ exit:
 int MQTTSNDeserialize_willmsgreq(unsigned char* buf, int buflen)
 {
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = -1;
 	int mylen;
 
@@ -424,13 +424,13 @@ exit:
 int MQTTSNDeserialize_willtopicresp(int* resp_rc, unsigned char* buf, int buflen)
 {
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = 0;
 	int mylen;
 
 	FUNC_ENTRY;
 	curdata += MQTTSNPacket_decode(curdata, buflen, &mylen); /* read length */
-	enddata = buf + mylen;
+	enddata  = buf + mylen;
 	if (enddata - buf < 3)
 		goto exit;
 
@@ -456,13 +456,13 @@ exit:
 int MQTTSNDeserialize_willmsgresp(int* resp_rc, unsigned char* buf, int buflen)
 {
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = 0;
 	int mylen;
 
 	FUNC_ENTRY;
 	curdata += MQTTSNPacket_decode(curdata, buflen, &mylen); /* read length */
-	enddata = buf + mylen;
+	enddata  = buf + mylen;
 	if (enddata - buf < 3)
 		goto exit;
 

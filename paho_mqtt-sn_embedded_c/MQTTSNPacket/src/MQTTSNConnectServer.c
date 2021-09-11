@@ -105,13 +105,13 @@ exit:
 int MQTTSNDeserialize_disconnect(int* duration, unsigned char* buf, int buflen)
 {
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = -1;
 	int mylen;
 
 	FUNC_ENTRY;
 	curdata += MQTTSNPacket_decode(curdata, buflen, &mylen); /* read length */
-	enddata = buf + mylen;
+	enddata  = buf + mylen;
 	if (enddata - curdata < 1)
 		goto exit;
 

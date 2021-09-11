@@ -110,7 +110,7 @@ int MQTTSNDeserialize_suback(int* qos, unsigned short* topicid, unsigned short* 
 {
 	MQTTSNFlags flags;
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = 0;
 	int mylen = 0;
 

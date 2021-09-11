@@ -14,11 +14,73 @@
  *    Ian Craggs - initial API and implementation and/or initial documentation
  *******************************************************************************/
 
+#include "MQTTSNTypeDef.hpp"
 #include "StackTrace.h"
-#include "MQTTSNPacket.h"
 #include <string.h>
 
 #define min(a, b) ((a < b) ? 1 : 0)
+
+/**
+  * Deserializes the supplied (wire) buffer into publish data
+  * @param msg MQTTSN::Message message parameter itself
+  * @param topic returned MQTTSNString - the MQTT topic in the publish
+  * @param buf the raw buffer data, of the correct length determined by the remaining length field
+  * @param buflen the length in bytes of the data in the supplied buffer
+  * @return error code.  1 is success
+  */
+int MQTTSNDeserialize_publish(MQTTSN::Message& msg, MQTTSN_topicid* topic, unsigned char* buf, int buflen) {
+    MQTTSNFlags flags;
+    unsigned char* curdata = buf;
+    unsigned char* enddata;
+    int rc = 0;
+    int mylen = 0;
+    unsigned int qos;
+
+    FUNC_ENTRY;
+    curdata += MQTTSNPacket_decode(curdata, buflen, &mylen); /* read length */
+    enddata = buf + mylen;
+    if (enddata - curdata > buflen) {
+        goto exit;
+    }
+
+    if (readChar(&curdata) != MQTTSN_PUBLISH) {
+        goto exit;
+    }
+
+    flags.all = readChar(&curdata);
+    msg.dup = flags.bits.dup;
+    qos     = static_cast<unsigned int>(flags.bits.QoS);
+    msg.qos = static_cast<enum MQTTSN::QoS>(qos);
+    msg.retained = flags.bits.retain;
+
+    topic->type = (MQTTSN_topicTypes)flags.bits.topicIdType;
+    if ((topic->type == MQTTSN_TOPIC_TYPE_NORMAL) && (qos == 3)) {
+        /* special arrangement for long topic names in QoS -1 publishes.  The length of the topic is in the topicid field */
+        topic->data.long_.len = readInt(&curdata);
+    }
+    else if ((topic->type == MQTTSN_TOPIC_TYPE_NORMAL) || (topic->type == MQTTSN_TOPIC_TYPE_PREDEFINED)) {
+        topic->data.id = readInt(&curdata);
+    }
+    else {
+        topic->data.short_name[0] = readChar(&curdata);
+        topic->data.short_name[1] = readChar(&curdata);
+    }
+    msg.id = static_cast<unsigned short>(readInt(&curdata));
+
+    if ((topic->type == MQTTSN_TOPIC_TYPE_NORMAL) && (qos == 3)) {
+        topic->data.long_.name = (char*)curdata;
+        curdata += topic->data.long_.len;
+    }
+
+    msg.payloadlen = enddata - curdata;
+    msg.payload    = curdata;
+    rc = 1;
+
+exit :
+    FUNC_EXIT_RC(rc);
+
+    return (rc);
+}
 
 /**
   * Deserializes the supplied (wire) buffer into publish data
@@ -90,13 +152,13 @@ int MQTTSNDeserialize_puback(unsigned short* topicid, unsigned short* packetid,
 		unsigned char* returncode, unsigned char* buf, int buflen)
 {
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = 0;
 	int mylen = 0;
 
 	FUNC_ENTRY;
 	curdata += MQTTSNPacket_decode(curdata, buflen, &mylen); /* read length */
-	enddata = buf + mylen;
+	enddata  = buf + mylen;
 	if (enddata - curdata > buflen)
 		goto exit;
 
@@ -125,13 +187,13 @@ exit:
 int MQTTSNDeserialize_ack(unsigned char* type, unsigned short* packetid, unsigned char* buf, int buflen)
 {
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = 0;
 	int mylen = 0;
 
 	FUNC_ENTRY;
 	curdata += MQTTSNPacket_decode(curdata, buflen, &mylen); /* read length */
-	enddata = buf + mylen;
+	enddata  = buf + mylen;
 	if (enddata - curdata > buflen)
 		goto exit;
 
@@ -161,13 +223,13 @@ int MQTTSNDeserialize_register(unsigned short* topicid, unsigned short* packetid
 		unsigned char* buf, int buflen)
 {
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = 0;
 	int mylen = 0;
 
 	FUNC_ENTRY;
 	curdata += MQTTSNPacket_decode(curdata, buflen, &mylen); /* read length */
-	enddata = buf + mylen;
+	enddata  = buf + mylen;
 	if (enddata - curdata > buflen)
 		goto exit;
 
@@ -201,13 +263,13 @@ int MQTTSNDeserialize_regack(unsigned short* topicid, unsigned short* packetid, 
 		unsigned char* buf, int buflen)
 {
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = 0;
 	int mylen = 0;
 
 	FUNC_ENTRY;
 	curdata += MQTTSNPacket_decode(curdata, buflen, &mylen); /* read length */
-	enddata = buf + mylen;
+	enddata  = buf + mylen;
 	if (enddata - curdata > buflen)
 		goto exit;
 

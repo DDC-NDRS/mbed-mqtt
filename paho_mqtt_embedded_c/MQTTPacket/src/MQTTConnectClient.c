@@ -147,7 +147,7 @@ int MQTTDeserialize_connack(unsigned char* sessionPresent, unsigned char* connac
 {
 	MQTTHeader header;
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = 0;
 	int mylen;
 	MQTTConnackFlags flags = {0};
@@ -158,7 +158,7 @@ int MQTTDeserialize_connack(unsigned char* sessionPresent, unsigned char* connac
 		goto exit;
 
 	curdata += (rc = MQTTPacket_decodeBuf(curdata, &mylen)); /* read remaining length */
-	enddata = curdata + mylen;
+	enddata  = curdata + mylen;
 	if (enddata - curdata < 2)
 		goto exit;
 

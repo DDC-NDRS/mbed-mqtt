@@ -18,44 +18,45 @@
 #include "MQTTSNPacket.h"
 
 int MQTTSNDeserialize_unsubscribe(unsigned short* packetid, MQTTSN_topicid* topicFilter,
-		unsigned char* buf, int buflen)
-{
-	MQTTSNFlags flags;
-	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
-	int rc = 0;
-	int mylen = 0;
+                                  unsigned char* buf, int buflen) {
+    MQTTSNFlags flags;
+    unsigned char* curdata = buf;
+    unsigned char* enddata;
+    int rc = 0;
+    int mylen = 0;
 
-	FUNC_ENTRY;
-	curdata += MQTTSNPacket_decode(curdata, buflen, &mylen); /* read length */
-	enddata = buf + mylen;
-	if (enddata - curdata > buflen)
-		goto exit;
+    FUNC_ENTRY;
+    curdata += MQTTSNPacket_decode(curdata, buflen, &mylen); /* read length */
+    enddata = buf + mylen;
+    if (enddata - curdata > buflen) {
+        goto exit;
+    }
 
-	if (readChar(&curdata) != MQTTSN_UNSUBSCRIBE)
-		goto exit;
+    if (readChar(&curdata) != MQTTSN_UNSUBSCRIBE) {
+        goto exit;
+    }
 
-	flags.all = readChar(&curdata);
-	*packetid = readInt(&curdata);
+    flags.all = readChar(&curdata);
+    *packetid = readInt(&curdata);
 
-	topicFilter->type = (MQTTSN_topicTypes)flags.bits.topicIdType;
-	if (topicFilter->type == MQTTSN_TOPIC_TYPE_NORMAL)
-	{
-		topicFilter->data.long_.len = enddata - curdata;
-		topicFilter->data.long_.name = (char*)curdata;
-	}
-	else if (topicFilter->type == MQTTSN_TOPIC_TYPE_PREDEFINED)
-		topicFilter->data.id = readInt(&curdata);
-	else if (topicFilter->type == MQTTSN_TOPIC_TYPE_SHORT)
-	{
-		topicFilter->data.short_name[0] = readChar(&curdata);
-		topicFilter->data.short_name[1] = readChar(&curdata);
-	}
+    topicFilter->type = (MQTTSN_topicTypes)flags.bits.topicIdType;
+    if (topicFilter->type == MQTTSN_TOPIC_TYPE_NORMAL) {
+        topicFilter->data.long_.len = enddata - curdata;
+        topicFilter->data.long_.name = (char*)curdata;
+    }
+    else if (topicFilter->type == MQTTSN_TOPIC_TYPE_PREDEFINED) {
+        topicFilter->data.id = readInt(&curdata);
+    }
+    else if (topicFilter->type == MQTTSN_TOPIC_TYPE_SHORT) {
+        topicFilter->data.short_name[0] = readChar(&curdata);
+        topicFilter->data.short_name[1] = readChar(&curdata);
+    }
 
-	rc = 1;
+    rc = 1;
 exit:
-	FUNC_EXIT_RC(rc);
-	return rc;
+    FUNC_EXIT_RC(rc);
+
+    return (rc);
 }
 
 

@@ -22,7 +22,7 @@
 
 /**
   * Deserializes the supplied (wire) buffer into publish data
-  * @param MQTT::Message message parameter itself
+  * @param msg message parameter itself
   * @param topicName returned MQTTString - the MQTT topic in the publish
   * @param buf the raw buffer data, of the correct length determined by the remaining length field
   * @param buflen the length in bytes of the data in the supplied buffer
@@ -86,7 +86,7 @@ int MQTTDeserialize_publish(unsigned char* dup, int* qos, unsigned char* retaine
 {
 	MQTTHeader header;
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = 0;
 	int mylen = 0;
 
@@ -99,7 +99,7 @@ int MQTTDeserialize_publish(unsigned char* dup, int* qos, unsigned char* retaine
 	*retained = header.bits.retain;
 
 	curdata += (rc = MQTTPacket_decodeBuf(curdata, &mylen)); /* read remaining length */
-	enddata = curdata + mylen;
+	enddata  = curdata + mylen;
 
 	if (!readMQTTLenString(topicName, &curdata, enddata) ||
 		enddata - curdata < 0) {/* do we have enough data to read the protocol version byte? */
@@ -169,7 +169,7 @@ int MQTTDeserialize_ack(unsigned char* packettype, unsigned char* dup, unsigned 
 {
 	MQTTHeader header;
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = 0;
 	int mylen = 0;
 
@@ -179,7 +179,7 @@ int MQTTDeserialize_ack(unsigned char* packettype, unsigned char* dup, unsigned 
 	*packettype = header.bits.type;
 
 	curdata += (rc = MQTTPacket_decodeBuf(curdata, &mylen)); /* read remaining length */
-	enddata = curdata + mylen;
+	enddata  = curdata + mylen;
 
 	if (enddata - curdata < 2)
 		goto exit;

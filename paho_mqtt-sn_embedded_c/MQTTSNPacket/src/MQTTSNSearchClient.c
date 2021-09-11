@@ -31,13 +31,13 @@
 int MQTTSNDeserialize_advertise(unsigned char* gatewayid, unsigned short* duration,	unsigned char* buf, int buflen)
 {
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = 0;
 	int mylen = 0;
 
 	FUNC_ENTRY;
 	curdata += MQTTSNPacket_decode(curdata, buflen, &mylen); /* read length */
-	enddata = buf + mylen;
+	enddata  = buf + mylen;
 	if (enddata - curdata > buflen)
 		goto exit;
 
@@ -100,13 +100,13 @@ int MQTTSNDeserialize_gwinfo(unsigned char* gatewayid, unsigned short* gatewayad
 		unsigned char** gatewayaddress, unsigned char* buf, int buflen)
 {
 	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
+	unsigned char* enddata;
 	int rc = 0;
 	int mylen = 0;
 
 	FUNC_ENTRY;
 	curdata += MQTTSNPacket_decode(curdata, buflen, &mylen); /* read length */
-	enddata = buf + mylen;
+	enddata  = buf + mylen;
 	if (enddata - curdata > buflen)
 		goto exit;
 

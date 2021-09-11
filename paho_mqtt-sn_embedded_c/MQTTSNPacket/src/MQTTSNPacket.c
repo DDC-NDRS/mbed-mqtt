@@ -19,14 +19,13 @@
 
 #include <string.h>
 
-static const char* packet_names[] =
-{
-		"ADVERTISE", "SEARCHGW", "GWINFO", "RESERVED", "CONNECT", "CONNACK",
-		"WILLTOPICREQ", "WILLTOPIC", "WILLMSGREQ", "WILLMSG", "REGISTER", "REGACK",
-		"PUBLISH", "PUBACK", "PUBCOMP", "PUBREC", "PUBREL", "RESERVED",
-		"SUBSCRIBE", "SUBACK", "UNSUBSCRIBE", "UNSUBACK", "PINGREQ", "PINGRESP",
-		"DISCONNECT", "RESERVED", "WILLTOPICUPD", "WILLTOPICRESP", "WILLMSGUPD",
-		"WILLMSGRESP"
+static const char* packet_names[] = {
+    "ADVERTISE", "SEARCHGW", "GWINFO", "RESERVED", "CONNECT", "CONNACK",
+    "WILLTOPICREQ", "WILLTOPIC", "WILLMSGREQ", "WILLMSG", "REGISTER", "REGACK",
+    "PUBLISH", "PUBACK", "PUBCOMP", "PUBREC", "PUBREL", "RESERVED",
+    "SUBSCRIBE", "SUBACK", "UNSUBSCRIBE", "UNSUBACK", "PINGREQ", "PINGRESP",
+    "DISCONNECT", "RESERVED", "WILLTOPICUPD", "WILLTOPICRESP", "WILLMSGUPD",
+    "WILLMSGRESP"
 };
 
 static const char* encapsulation_packet_name = "ENCAPSULATED";
@@ -36,13 +35,12 @@ static const char* encapsulation_packet_name = "ENCAPSULATED";
  * @param code MsgType code
  * @return the corresponding packet name
  */
-const char* MQTTSNPacket_name(int code)
-{
-    if ( code == MQTTSN_ENCAPSULATED )
-    {
+const char* MQTTSNPacket_name(int code) {
+    if (code == MQTTSN_ENCAPSULATED) {
         return encapsulation_packet_name;
     }
-	return (code >= 0 && code <= MQTTSN_WILLMSGRESP) ? packet_names[code] : "UNKNOWN";
+
+    return (code >= 0 && code <= MQTTSN_WILLMSGRESP) ? packet_names[code] : "UNKNOWN";
 }
 
 
@@ -51,9 +49,8 @@ const char* MQTTSNPacket_name(int code)
  * @param length the length of the MQTT-SN packet without the length field
  * @return the total length of the MQTT-SN packet including the length field
  */
-int MQTTSNPacket_len(int length)
-{
-	return (length > 255) ? length + 3 : length + 1;
+int MQTTSNPacket_len(int length) {
+    return (length > 255) ? length + 3 : length + 1;
 }
 
 /**
@@ -62,22 +59,23 @@ int MQTTSNPacket_len(int length)
  * @param length the length to be encoded
  * @return the number of bytes written to the buffer
  */
-int MQTTSNPacket_encode(unsigned char* buf, int length)
-{
-	int rc = 0;
+int MQTTSNPacket_encode(unsigned char* buf, int length) {
+    int rc;
 
-	FUNC_ENTRY;
-	if (length > 255)
-	{
-		writeChar(&buf, 0x01);
-		writeInt(&buf, length);
-		rc += 3;
-	}
-	else
-		buf[rc++] = length;
+    FUNC_ENTRY;
+    rc = 0;
+    if (length > 255) {
+        writeChar(&buf, 0x01);
+        writeInt(&buf, length);
+        rc += 3;
+    }
+    else {
+        buf[rc++] = length;
+    }
 
-	FUNC_EXIT_RC(rc);
-	return rc;
+    FUNC_EXIT_RC(rc);
+
+    return (rc);
 }
 
 
@@ -87,31 +85,33 @@ int MQTTSNPacket_encode(unsigned char* buf, int length)
  * @param value the decoded length returned
  * @return the number of bytes read from the socket
  */
-int MQTTSNPacket_decode(unsigned char* buf, int buflen, int* value)
-{
-	int len = MQTTSNPACKET_READ_ERROR;
-#define MAX_NO_OF_LENGTH_BYTES 3
+int MQTTSNPacket_decode(unsigned char* buf, int buflen, int* value) {
+    int len = MQTTSNPACKET_READ_ERROR;
+    #define MAX_NO_OF_LENGTH_BYTES 3
 
-	FUNC_ENTRY;
-	if (buflen <= 0)
-		goto exit;
+    FUNC_ENTRY;
+    if (buflen <= 0) {
+        goto exit;
+    }
 
-	if (buf[0] == 1)
-	{
-		unsigned char* bufptr = &buf[1];
-		if (buflen < MAX_NO_OF_LENGTH_BYTES)
-			goto exit;
-		*value = readInt(&bufptr);
-		len = 3;
-	}
-	else
-	{
-		*value = buf[0];
-		len = 1;
-	}
-exit:
-	FUNC_EXIT_RC(len);
-	return len;
+    if (buf[0] == 1) {
+        unsigned char* bufptr = &buf[1];
+        if (buflen < MAX_NO_OF_LENGTH_BYTES) {
+            goto exit;
+        }
+
+        *value = readInt(&bufptr);
+        len = 3;
+    }
+    else {
+        *value = buf[0];
+        len = 1;
+    }
+
+exit :
+    FUNC_EXIT_RC(len);
+
+    return (len);
 }
 
 /**
@@ -120,15 +120,15 @@ exit:
  * @param b pointer to second topic
  * @return boolean true if topics are equal and flase otherwise
  */
-int MQTTSNTopic_equals(const MQTTSN_topicid* const a, const MQTTSN_topicid* const b)
-{
-    if ((a->type == b->type)
-            && (a->data.id == b->data.id)
-            && (a->data.short_name[0] == b->data.short_name[0])
-            && (a->data.short_name[1] == b->data.short_name[1])) {
-        return 1;
-    } else {
-        return 0;
+int MQTTSNTopic_equals(const MQTTSN_topicid* const a, const MQTTSN_topicid* const b) {
+    if ((a->type == b->type)       &&
+        (a->data.id == b->data.id) &&
+        (a->data.short_name[0] == b->data.short_name[0]) &&
+        (a->data.short_name[1] == b->data.short_name[1])) {
+        return (1);
+    }
+    else {
+        return (0);
     }
 }
 
@@ -206,15 +206,14 @@ int getLenStringLen(char* ptr)
 }
 #endif
 
-void writeMQTTSNString(unsigned char** pptr, MQTTSNString MQTTSNString)
-{
-	if (MQTTSNString.lenstring.len > 0)
-	{
-		memcpy(*pptr, (const unsigned char*)MQTTSNString.lenstring.data, MQTTSNString.lenstring.len);
-		*pptr += MQTTSNString.lenstring.len;
-	}
-	else if (MQTTSNString.cstring)
-		writeCString(pptr, MQTTSNString.cstring);
+void writeMQTTSNString(unsigned char** pptr, MQTTSNString MQTTSNString) {
+    if (MQTTSNString.lenstring.len > 0) {
+        memcpy(*pptr, (const unsigned char*)MQTTSNString.lenstring.data, MQTTSNString.lenstring.len);
+        *pptr += MQTTSNString.lenstring.len;
+    }
+    else if (MQTTSNString.cstring) {
+        writeCString(pptr, MQTTSNString.cstring);
+    }
 }
 
 
@@ -224,25 +223,24 @@ void writeMQTTSNString(unsigned char** pptr, MQTTSNString MQTTSNString)
  * @param enddata pointer to the end of the data: do not read beyond
  * @return 1 if successful, 0 if not
  */
-int readMQTTSNString(MQTTSNString* MQTTSNString, unsigned char** pptr, unsigned char* enddata)
-{
-	int rc = 0;
+int readMQTTSNString(MQTTSNString* MQTTSNString, unsigned char** pptr, unsigned char* enddata) {
+    int rc;
 
-	FUNC_ENTRY;
-	MQTTSNString->lenstring.len = enddata - *pptr;
-	if (MQTTSNString->lenstring.len > 0)
-	{
-		MQTTSNString->lenstring.data = (char*)*pptr;
-		*pptr += MQTTSNString->lenstring.len;
-	}
-	else
-	{
-		MQTTSNString->lenstring.data = NULL;
-		MQTTSNString->cstring = NULL;
-	}
-	rc = 1;
-	FUNC_EXIT_RC(rc);
-	return rc;
+    FUNC_ENTRY;
+    MQTTSNString->lenstring.len = enddata - *pptr;
+    if (MQTTSNString->lenstring.len > 0) {
+        MQTTSNString->lenstring.data = (char*)*pptr;
+        *pptr += MQTTSNString->lenstring.len;
+    }
+    else {
+        MQTTSNString->lenstring.data = NULL;
+        MQTTSNString->cstring = NULL;
+    }
+
+    rc = 1;
+    FUNC_EXIT_RC(rc);
+
+    return (rc);
 }
 
 
@@ -251,15 +249,17 @@ int readMQTTSNString(MQTTSNString* MQTTSNString, unsigned char** pptr, unsigned 
  * @param MQTTSNString the string to return the length of
  * @return the length of the string
  */
-int MQTTSNstrlen(MQTTSNString MQTTSNString)
-{
-	int rc = 0;
+int MQTTSNstrlen(MQTTSNString MQTTSNString) {
+    int rc;
 
-	if (MQTTSNString.cstring)
-		rc = strlen(MQTTSNString.cstring);
-	else
-		rc = MQTTSNString.lenstring.len;
-	return rc;
+    if (MQTTSNString.cstring) {
+        rc = strlen(MQTTSNString.cstring);
+    }
+    else {
+        rc = MQTTSNString.lenstring.len;
+    }
+
+    return (rc);
 }
 
 
@@ -270,42 +270,44 @@ int MQTTSNstrlen(MQTTSNString MQTTSNString)
  * @param getfn pointer to a function which will read any number of bytes from the needed source
  * @return integer MQTT packet type, or MQTTSNPACKET_READ_ERROR on error
  */
-int MQTTSNPacket_read(unsigned char* buf, int buflen, int (*getfn)(unsigned char*, int))
-{
-	int rc = MQTTSNPACKET_READ_ERROR;
-	const int MQTTSN_MIN_PACKET_LENGTH = 2;
-	int len = 0;  /* the length of the whole packet including length field */
-	int lenlen = 0;
-	int datalen = 0;
+int MQTTSNPacket_read(unsigned char* buf, int buflen, int (*getfn)(unsigned char*, int)) {
+    int rc = MQTTSNPACKET_READ_ERROR;
+    const int MQTTSN_MIN_PACKET_LENGTH = 2;
+    int len = 0;  /* the length of the whole packet including length field */
+    int lenlen = 0;
+    int datalen = 0;
 
-	/* 1. read a packet - UDP style */
-	if ((len = (*getfn)(buf, buflen)) < MQTTSN_MIN_PACKET_LENGTH)
-		goto exit;
+    /* 1. read a packet - UDP style */
+    if ((len = (*getfn)(buf, buflen)) < MQTTSN_MIN_PACKET_LENGTH)
+        goto exit;
 
-	/* 2. read the length.  This is variable in itself */
-	lenlen = MQTTSNPacket_decode(buf, len, &datalen);
-	if (datalen != len)
-		goto exit; /* there was an error */
+    /* 2. read the length.  This is variable in itself */
+    lenlen = MQTTSNPacket_decode(buf, len, &datalen);
+    if (datalen != len) {
+        goto exit; /* there was an error */
+    }
 
-	rc = buf[lenlen]; /* return the packet type */
-exit:
-	return rc;
+    rc = buf[lenlen]; /* return the packet type */
+
+exit :
+    return (rc);
 }
 
-int MQTTSNPacket_read_nb(unsigned char* buf, int buflen)
-{
-	int rc = MQTTSNPACKET_READ_ERROR;
-	int len = buflen;  /* the length of the whole packet including length field */
-	int lenlen = 0;
-	int datalen = 0;
+int MQTTSNPacket_read_nb(unsigned char* buf, int buflen) {
+    int rc  = MQTTSNPACKET_READ_ERROR;
+    int len = buflen;                       /* the length of the whole packet including length field */
+    int lenlen;
+    int datalen = 0;
 
-	/* 2. read the length.  This is variable in itself */
-	lenlen = MQTTSNPacket_decode(buf, len, &datalen);
-	if (datalen != len)
-		goto exit; /* there was an error */
+    /* 2. read the length.  This is variable in itself */
+    lenlen = MQTTSNPacket_decode(buf, len, &datalen);
+    if (datalen != len) {
+        goto exit; /* there was an error */
+    }
 
-	rc = buf[lenlen]; /* return the packet type */
-exit:
-	return rc;
+    rc = buf[lenlen]; /* return the packet type */
+
+exit :
+    return (rc);
 }
 
