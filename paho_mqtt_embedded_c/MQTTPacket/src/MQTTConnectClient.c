@@ -143,39 +143,38 @@ exit :
   * @param len the length in bytes of the data in the supplied buffer
   * @return error code.  1 is success, 0 is failure
   */
-int MQTTDeserialize_connack(unsigned char* sessionPresent, unsigned char* connack_rc, unsigned char* buf, int buflen)
-{
-	MQTTHeader header;
-	unsigned char* curdata = buf;
-	unsigned char* enddata;
-	int rc;
-	int mylen;
-	MQTTConnackFlags flags;
+int MQTTDeserialize_connack(unsigned char* sessionPresent, unsigned char* connack_rc, unsigned char* buf, int buflen) {
+    MQTTHeader header;
+    unsigned char* curdata = buf;
+    unsigned char* enddata;
+    int rc;
+    int mylen;
+    MQTTConnackFlags flags;
 
-	FUNC_ENTRY;
-	rc = 0;
-	header.byte = readChar(&curdata);
-	if (header.bits.type != CONNACK) {
-		goto exit;
-	}
+    FUNC_ENTRY;
+    rc = 0;
+    header.byte = curdata[0];
+    if (header.bits.type != CONNACK) {
+        goto exit;
+    }
 
-	rc = MQTTPacket_decodeBuf(curdata, &mylen);
-	curdata += rc;                          /* read remaining length */
-	enddata  = curdata + mylen;
-	if ((enddata - curdata) < 2) {
-		goto exit;
-	}
+    rc = MQTTPacket_decodeBuf(&curdata[1], &mylen);
+    curdata = &curdata[rc + 1];                    /* read remaining length */
+    enddata = &curdata[mylen];
+    if ((enddata - curdata) < 2) {
+        goto exit;
+    }
 
-	flags.all = readChar(&curdata);
-	*sessionPresent = flags.bits.sessionpresent;
-	*connack_rc = readChar(&curdata);
+    flags.all = curdata[0];
+    *sessionPresent = flags.bits.sessionpresent;
+    *connack_rc = curdata[1];
 
-	rc = 1;
+    rc = 1;
 
 exit :
-	FUNC_EXIT_RC(rc);
+    FUNC_EXIT_RC(rc);
 
-	return (rc);
+    return (rc);
 }
 
 
@@ -187,21 +186,17 @@ exit :
   * @return serialized length, or error if 0
   */
 int MQTTSerialize_zero(unsigned char* buf, int buflen, unsigned char packettype) {
-    MQTTHeader header;
     int rc;
-    unsigned char* ptr = buf;
 
     FUNC_ENTRY;
     if (buflen < 2) {
         rc = MQTTPACKET_BUFFER_TOO_SHORT;
         goto exit;
     }
-    header.byte = 0;
-    header.bits.type = packettype;
-    writeChar(&ptr, header.byte);           /* write header */
 
-    ptr += MQTTPacket_encode(ptr, 0);       /* write remaining length */
-    rc   = (ptr - buf);
+    buf[0] = utl_mqtt_pkg_type(packettype);         /* write header */
+    buf[1] = 0;                                     /* write remaining length */
+    rc = 2;
 
 exit :
     FUNC_EXIT_RC(rc);

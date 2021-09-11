@@ -39,6 +39,7 @@ int MQTTDeserialize_unsubscribe(unsigned char* dup, unsigned short* packetid, in
 	unsigned char* enddata;
 	int rc;
 	int mylen;
+	int _cnt;
 
 	FUNC_ENTRY;
 	rc = 0;
@@ -53,18 +54,21 @@ int MQTTDeserialize_unsubscribe(unsigned char* dup, unsigned short* packetid, in
 
 	*packetid = readInt(&curdata);
 
-	*count = 0;
-	while (curdata < enddata)
-	{
-		if (!readMQTTLenString(&topicFilters[*count], &curdata, enddata))
-			goto exit;
-		(*count)++;
-	}
+	_cnt = 0;
+    while (curdata < enddata) {
+        if (!readMQTTLenString(&topicFilters[_cnt], &curdata, enddata)) {
+            goto exit;
+        }
+
+        _cnt++;
+    }
 
 	rc = 1;
-exit:
+exit :
 	FUNC_EXIT_RC(rc);
-	return rc;
+	*count = _cnt;
+
+	return (rc);
 }
 
 
@@ -75,18 +79,16 @@ exit:
   * @param packetid integer - the MQTT packet identifier
   * @return the length of the serialized data.  <= 0 indicates error
   */
-int MQTTSerialize_unsuback(unsigned char* buf, int buflen, unsigned short packetid)
-{
-	MQTTHeader header;
-	int rc = 0;
-	unsigned char *ptr = buf;
+int MQTTSerialize_unsuback(unsigned char* buf, int buflen, unsigned short packetid) {
+    MQTTHeader header;
+	int rc;
+    unsigned char* ptr = buf;
 
 	FUNC_ENTRY;
-	if (buflen < 2)
-	{
-		rc = MQTTPACKET_BUFFER_TOO_SHORT;
-		goto exit;
-	}
+    if (buflen < 4) {
+        rc = MQTTPACKET_BUFFER_TOO_SHORT;
+        goto exit;
+    }
 	header.byte = 0;
 	header.bits.type = UNSUBACK;
 	writeChar(&ptr, header.byte); /* write header */
@@ -95,10 +97,12 @@ int MQTTSerialize_unsuback(unsigned char* buf, int buflen, unsigned short packet
 
 	writeInt(&ptr, packetid);
 
-	rc = ptr - buf;
-exit:
+	rc = (ptr - buf);
+
+exit :
 	FUNC_EXIT_RC(rc);
-	return rc;
+
+	return (rc);
 }
 
 

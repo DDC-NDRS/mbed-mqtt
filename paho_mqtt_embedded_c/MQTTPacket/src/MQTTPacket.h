@@ -18,6 +18,8 @@
 #ifndef MQTTPACKET_H_
 #define MQTTPACKET_H_
 
+#include <stdint.h>
+
 #if defined(__cplusplus) /* If this is a C++ compiler, use C linkage */
 extern "C" {
 #endif
@@ -40,12 +42,29 @@ enum errorsMqtt
 	MQTTPACKET_READ_COMPLETE
 };
 
-enum msgTypes
-{
-	CONNECT = 1, CONNACK, PUBLISH, PUBACK, PUBREC, PUBREL,
-	PUBCOMP, SUBSCRIBE, SUBACK, UNSUBSCRIBE, UNSUBACK,
-	PINGREQ, PINGRESP, DISCONNECT
+enum msgTypes {
+    CONNECT = 1,
+    CONNACK,
+    PUBLISH,
+    PUBACK,
+    PUBREC,
+    PUBREL,
+    PUBCOMP,
+    SUBSCRIBE,
+    SUBACK,
+    UNSUBSCRIBE,
+    UNSUBACK,
+    PINGREQ,
+    PINGRESP,
+    DISCONNECT
 };
+
+static inline uint8_t utl_mqtt_pkg_type(uint8_t typ) {
+    return ((uint8_t)(typ) << 4U);
+}
+
+#define utl_mqtt_write_int(u1, u0, val)     (u1) = (uint8_t)((val) >> 8U);          \
+                                            (u0) = (uint8_t)((val) & 0xFFU)
 
 /**
  * Bitfields for the MQTT header byte.

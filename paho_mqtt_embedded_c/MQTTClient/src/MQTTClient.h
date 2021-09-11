@@ -971,7 +971,7 @@ int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, b>::publish(const char* t
     MQTTString topicString = MQTTString_initializer;
     int len;
 
-    if (!isconnected) {
+    if (isconnected == false) {
         goto exit;
     }
 

@@ -30,7 +30,7 @@ int MQTTSerialize_subscribeLength(int count, MQTTString topicFilters[]) {
     int len = 2;                            /* packetid */
 
     for (i = 0; i < count; ++i) {
-        len += 2 + MQTTstrlen(topicFilters[i]) + 1; /* length + topic + req_qos */
+        len += 2 + MQTTstrlen(topicFilters[i]) + 1;             /* length + topic + req_qos */
     }
 
     return (len);
@@ -109,13 +109,14 @@ int MQTTDeserialize_suback(unsigned short* packetid, int maxcount, int* count, i
 
     FUNC_ENTRY;
     rc = 0;
-    header.byte = readChar(&curdata);
+    header.byte = curdata[0];
     if (header.bits.type != SUBACK) {
         goto exit;
     }
 
-    curdata += (rc = MQTTPacket_decodeBuf(curdata, &mylen)); /* read remaining length */
-    enddata  = curdata + mylen;
+    rc = MQTTPacket_decodeBuf(&curdata[1], &mylen);
+    curdata = &curdata[rc + 1];                    /* read remaining length */
+    enddata = &curdata[mylen];
     if ((enddata - curdata) < 2) {
         goto exit;
     }
