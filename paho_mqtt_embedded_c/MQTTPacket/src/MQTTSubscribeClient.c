@@ -103,11 +103,12 @@ int MQTTDeserialize_suback(unsigned short* packetid, int maxcount, int* count, i
     MQTTHeader header;
     unsigned char* curdata = buf;
     unsigned char* enddata;
-    int rc    = 0;
-    int mylen = 0;
+    int rc;
+    int mylen;
     int _cnt;
 
     FUNC_ENTRY;
+    rc = 0;
     header.byte = readChar(&curdata);
     if (header.bits.type != SUBACK) {
         goto exit;

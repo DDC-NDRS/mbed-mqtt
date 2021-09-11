@@ -38,13 +38,15 @@ int MQTTDeserialize_subscribe(unsigned char* dup, unsigned short* packetid, int 
 	MQTTHeader header;
 	unsigned char* curdata = buf;
 	unsigned char* enddata;
-	int rc = -1;
-	int mylen = 0;
+	int rc;
+	int mylen;
 
 	FUNC_ENTRY;
+	rc = 0;
 	header.byte = readChar(&curdata);
-	if (header.bits.type != SUBSCRIBE)
+	if (header.bits.type != SUBSCRIBE) {
 		goto exit;
+	}
 	*dup = header.bits.dup;
 
 	curdata += (rc = MQTTPacket_decodeBuf(curdata, &mylen)); /* read remaining length */

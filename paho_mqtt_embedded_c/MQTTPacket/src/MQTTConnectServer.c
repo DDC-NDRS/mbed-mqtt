@@ -27,17 +27,20 @@
   * @param version the MQTT protocol version number, as in the connect packet
   * @return correct MQTT combination?  1 is true, 0 is false
   */
-int MQTTPacket_checkVersion(MQTTString* protocol, int version)
-{
-	int rc = 0;
+int MQTTPacket_checkVersion(MQTTString* protocol, int version) {
+    int rc;
 
-	if (version == 3 && memcmp(protocol->lenstring.data, "MQIsdp",
-			min(6, protocol->lenstring.len)) == 0)
-		rc = 1;
-	else if (version == 4 && memcmp(protocol->lenstring.data, "MQTT",
-			min(4, protocol->lenstring.len)) == 0)
-		rc = 1;
-	return rc;
+    if ((version == 3) && memcmp(protocol->lenstring.data, "MQIsdp", min(6, protocol->lenstring.len)) == 0) {
+        rc = 1;
+    }
+    else if ((version == 4) && memcmp(protocol->lenstring.data, "MQTT", min(4, protocol->lenstring.len)) == 0) {
+        rc = 1;
+    }
+    else {
+        rc = 0;
+    }
+
+    return (rc);
 }
 
 
@@ -51,31 +54,33 @@ int MQTTPacket_checkVersion(MQTTString* protocol, int version)
 int MQTTDeserialize_connect(MQTTPacket_connectData* data, unsigned char* buf, int len)
 {
 	MQTTHeader header;
-	MQTTConnectFlags flags = {0};
+	MQTTConnectFlags flags;
 	unsigned char* curdata = buf;
 	unsigned char* enddata = &buf[len];
-	int rc = 0;
+	int rc;
 	MQTTString Protocol;
 	int version;
-	int mylen = 0;
+	int mylen;
 
 	FUNC_ENTRY;
+	rc = 0;
 	header.byte = readChar(&curdata);
-	if (header.bits.type != CONNECT)
+	if (header.bits.type != CONNECT) {
 		goto exit;
+	}
 
 	curdata += MQTTPacket_decodeBuf(curdata, &mylen); /* read remaining length */
 
 	if (!readMQTTLenString(&Protocol, &curdata, enddata) ||
-		enddata - curdata < 0) /* do we have enough data to read the protocol version byte? */
+		(enddata - curdata) < 0) {          /* do we have enough data to read the protocol version byte? */
 		goto exit;
+	}
 
 	version = (int)readChar(&curdata); /* Protocol version */
 	/* If we don't recognize the protocol version, we don't parse the connect packet on the
 	 * basis that we don't know what the format will be.
 	 */
-	if (MQTTPacket_checkVersion(&Protocol, version))
-	{
+    if (MQTTPacket_checkVersion(&Protocol, version) == 1) {
 		flags.all = readChar(&curdata);
 		data->cleansession = flags.bits.cleansession;
 		data->keepAliveInterval = readInt(&curdata);
@@ -115,34 +120,35 @@ exit:
   * @param connack_rc the integer connack return code to be used 
   * @param sessionPresent the MQTT 3.1.1 sessionPresent flag
   * @return serialized length, or error if 0
-  */
-int MQTTSerialize_connack(unsigned char* buf, int buflen, unsigned char connack_rc, unsigned char sessionPresent)
-{
-	MQTTHeader header;
-	int rc = 0;
-	unsigned char *ptr = buf;
-	MQTTConnackFlags flags = {0};
+ */
+int MQTTSerialize_connack(unsigned char* buf, int buflen, unsigned char connack_rc, unsigned char sessionPresent) {
+    MQTTHeader header;
+    int rc;
+    unsigned char* ptr = buf;
+    MQTTConnackFlags flags;
 
-	FUNC_ENTRY;
-	if (buflen < 2)
-	{
-		rc = MQTTPACKET_BUFFER_TOO_SHORT;
-		goto exit;
-	}
-	header.byte = 0;
-	header.bits.type = CONNACK;
-	writeChar(&ptr, header.byte); /* write header */
+    FUNC_ENTRY;
+    if (buflen < 2) {
+        rc = MQTTPACKET_BUFFER_TOO_SHORT;
+        goto exit;
+    }
 
-	ptr += MQTTPacket_encode(ptr, 2); /* write remaining length */
+    header.byte = 0;
+    header.bits.type = CONNACK;
+    writeChar(&ptr, header.byte); /* write header */
 
-	flags.all = 0;
-	flags.bits.sessionpresent = sessionPresent;
-	writeChar(&ptr, flags.all); 
-	writeChar(&ptr, connack_rc);
+    ptr += MQTTPacket_encode(ptr, 2); /* write remaining length */
 
-	rc = ptr - buf;
-exit:
-	FUNC_EXIT_RC(rc);
-	return rc;
+    flags.all = 0;
+    flags.bits.sessionpresent = sessionPresent;
+    writeChar(&ptr, flags.all);
+    writeChar(&ptr, connack_rc);
+
+    rc = (ptr - buf);
+
+exit :
+    FUNC_EXIT_RC(rc);
+
+    return (rc);
 }
 

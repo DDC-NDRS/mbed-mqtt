@@ -331,7 +331,7 @@ int MQTT::Client<Network, Timer, a, b>::sendPacket(int length, Timer& timer) {
         }
 
         sent += rc;
-        if (timer.expired()) {              // only check expiry after at least one attempt to write
+        if (timer.expired() == true) {      // only check expiry after at least one attempt to write
             break;
         }
     }
@@ -356,31 +356,32 @@ int MQTT::Client<Network, Timer, a, b>::sendPacket(int length, Timer& timer) {
 
 
 template<class Network, class Timer, int a, int b>
-int MQTT::Client<Network, Timer, a, b>::decodePacket(int* value, int timeout)
-{
+int MQTT::Client<Network, Timer, a, b>::decodePacket(int* value, int timeout) {
     unsigned char c;
     int multiplier = 1;
     int len = 0;
     const int MAX_NO_OF_REMAINING_LENGTH_BYTES = 4;
 
     *value = 0;
-    do
-    {
+    do {
         int rc = MQTTPACKET_READ_ERROR;
 
-        if (++len > MAX_NO_OF_REMAINING_LENGTH_BYTES)
-        {
+        if (++len > MAX_NO_OF_REMAINING_LENGTH_BYTES) {
             rc = MQTTPACKET_READ_ERROR; /* bad data */
             goto exit;
         }
+
         rc = ipstack.read(&c, 1, timeout);
-        if (rc != 1)
+        if (rc != 1) {
             goto exit;
-        *value += (c & 127) * multiplier;
+        }
+
+        *value += (c & 0x7F) * multiplier;
         multiplier *= 128;
-    } while ((c & 128) != 0);
-exit:
-    return len;
+    } while ((c & 0x80) != 0);
+
+exit :
+    return (len);
 }
 
 
@@ -391,8 +392,7 @@ exit:
  * @return the MQTT packet type, 0 if none, -1 if error
  */
 template<class Network, class Timer, int MAX_MQTT_PACKET_SIZE, int b>
-int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, b>::readPacket(Timer& timer)
-{
+int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, b>::readPacket(Timer& timer) {
     int rc = FAILURE;
     MQTTHeader header;
     int len = 0;
@@ -400,8 +400,7 @@ int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, b>::readPacket(Timer& tim
 
     /* 1. read the header byte.  This has the packet type in it */
     rc = ipstack.read(readbuf, 1, timer.left_ms());
-    if (rc != 1)
-    {
+    if (rc != 1) {
         rc = 0; // timed out reading packet
         goto exit;
     }
@@ -411,34 +410,33 @@ int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, b>::readPacket(Timer& tim
     decodePacket(&rem_len, timer.left_ms());
     len += MQTTPacket_encode(readbuf + 1, rem_len); /* put the original remaining length into the buffer */
 
-    if (rem_len > (MAX_MQTT_PACKET_SIZE - len))
-    {
+    if (rem_len > (MAX_MQTT_PACKET_SIZE - len)) {
         rc = BUFFER_OVERFLOW;
         goto exit;
     }
 
     /* 3. read the rest of the buffer using a callback to supply the rest of the data */
-    if (rem_len > 0 && (ipstack.read(readbuf + len, rem_len, timer.left_ms()) != rem_len))
-    {
+    if (rem_len > 0 && (ipstack.read(readbuf + len, rem_len, timer.left_ms()) != rem_len)) {
         rc = FAILURE;
         goto exit;
     }
 
     header.byte = readbuf[0];
     rc = header.bits.type;
-    if (this->keepAliveInterval > 0)
+    if (this->keepAliveInterval > 0) {
         last_received.countdown(this->keepAliveInterval); // record the fact that we have successfully received a packet
-exit:
+    }
 
+exit :
 #if defined(MQTT_DEBUG)
-    if (rc >= 0)
-    {
+    if (rc >= 0) {
         char printbuf[50];
         DEBUG("Rc %d receiving packet %s\r\n", rc,
-            MQTTFormat_toClientString(printbuf, sizeof(printbuf), readbuf, len));
+              MQTTFormat_toClientString(printbuf, sizeof(printbuf), readbuf, len));
     }
 #endif
-    return rc;
+
+    return (rc);
 }
 
 
@@ -476,18 +474,14 @@ bool MQTT::Client<Network, Timer, a, b>::isTopicMatched(char* topicFilter, MQTTS
 
 
 template<class Network, class Timer, int a, int MAX_MESSAGE_HANDLERS>
-int MQTT::Client<Network, Timer, a, MAX_MESSAGE_HANDLERS>::deliverMessage(MQTTString& topicName, Message& message)
-{
+int MQTT::Client<Network, Timer, a, MAX_MESSAGE_HANDLERS>::deliverMessage(MQTTString& topicName, Message& message) {
     int rc = FAILURE;
 
     // we have to find the right message handler - indexed by topic
-    for (int i = 0; i < MAX_MESSAGE_HANDLERS; ++i)
-    {
-        if (messageHandlers[i].topicFilter != 0 && (MQTTPacket_equals(&topicName, (char*)messageHandlers[i].topicFilter) ||
-                isTopicMatched((char*)messageHandlers[i].topicFilter, topicName)))
-        {
-            if (messageHandlers[i].fp.attached())
-            {
+    for (int i = 0; i < MAX_MESSAGE_HANDLERS; ++i) {
+        if ((messageHandlers[i].topicFilter != 0) &&
+            (MQTTPacket_equals(&topicName, (char*)messageHandlers[i].topicFilter) || isTopicMatched((char*)messageHandlers[i].topicFilter, topicName))) {
+            if (messageHandlers[i].fp.attached()) {
                 MessageData md(topicName, message);
                 messageHandlers[i].fp(md);
                 rc = SUCCESS;
@@ -495,14 +489,13 @@ int MQTT::Client<Network, Timer, a, MAX_MESSAGE_HANDLERS>::deliverMessage(MQTTSt
         }
     }
 
-    if (rc == FAILURE && defaultMessageHandler.attached())
-    {
+    if ((rc == FAILURE) && defaultMessageHandler.attached()) {
         MessageData md(topicName, message);
         defaultMessageHandler(md);
         rc = SUCCESS;
     }
 
-    return rc;
+    return (rc);
 }
 
 
@@ -513,7 +506,7 @@ int MQTT::Client<Network, Timer, a, b>::yield(unsigned long timeout_ms) {
     Timer timer;
 
     timer.countdown_ms(timeout_ms);
-    while (!timer.expired()) {
+    while (timer.expired() == false) {
         if (cycle(timer) < 0) {
             rc = FAILURE;
             break;
@@ -593,6 +586,7 @@ int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, b>::cycle(Timer& timer) {
             break;
 #endif
         }
+
 #if MQTTCLIENT_QOS2
         case PUBREC:
         case PUBREL:
@@ -792,7 +786,7 @@ int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, MAX_MESSAGE_HANDLERS>::se
     }
 
     // if no existing, look for empty slot (unless we are removing)
-    if (messageHandler != 0) {
+    if (messageHandler != nullptr) {
         if (rc == FAILURE) {
             for (i = 0; i < MAX_MESSAGE_HANDLERS; ++i) {
                 if (messageHandlers[i].topicFilter == 0) {
@@ -880,7 +874,7 @@ int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, MAX_MESSAGE_HANDLERS>::un
     MQTTString topic = {(char*)topicFilter, {0, 0}};
     int len;
 
-    if (!isconnected) {
+    if (isconnected == false) {
         goto exit;
     }
 

@@ -58,14 +58,13 @@ int MQTTPacket_decode(int (*getcharfn)(unsigned char*, int), int* value) {
     unsigned char c;
     int multiplier = 1;
     int len = 0;
+    int rc;
 
 #define MAX_NO_OF_REMAINING_LENGTH_BYTES 4
 
     FUNC_ENTRY;
     *value = 0;
     do {
-        int rc = MQTTPACKET_READ_ERROR;
-
         if (++len > MAX_NO_OF_REMAINING_LENGTH_BYTES) {
             rc = MQTTPACKET_READ_ERROR; /* bad data */
             goto exit;
@@ -106,22 +105,33 @@ int MQTTPacket_len(int rem_len) {
 }
 
 
-static unsigned char* bufptr;
-
-int bufchar(unsigned char* c, int count) {
-    int i;
-
-    for (i = 0; i < count; ++i) {
-        *c = *bufptr++;
-    }
-
-    return (count);
-}
-
-
 int MQTTPacket_decodeBuf(unsigned char* buf, int* value) {
-    bufptr = buf;
-    return MQTTPacket_decode(bufchar, value);
+    unsigned char c;
+    int multiplier = 1;
+    int len;
+    int tmp_val;
+
+    #define MAX_NO_OF_REMAINING_LENGTH_BYTES 4
+
+    FUNC_ENTRY;
+    len = 0;
+    tmp_val = 0;
+    do {
+        if (++len > MAX_NO_OF_REMAINING_LENGTH_BYTES) {
+            goto exit;
+        }
+
+        c = *buf++;
+
+        tmp_val += (c & 0x7F) * multiplier;
+        multiplier *= 128;
+    } while ((c & 0x80) != 0);
+
+exit :
+    FUNC_EXIT_RC(len);
+    *value = tmp_val;
+
+    return (len);
 }
 
 /**

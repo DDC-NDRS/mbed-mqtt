@@ -32,10 +32,11 @@ int MQTTDeserialize_publish(MQTT::Message& msg, MQTTString* topicName, unsigned 
     MQTTHeader header;
     unsigned char* curdata = buf;
     unsigned char* enddata;
-    int rc = 0;
-    int mylen = 0;
+    int rc;
+    int mylen;
 
     FUNC_ENTRY;
+    rc = 0;
     header.byte = readChar(&curdata);
     if (header.bits.type != PUBLISH) {
         goto exit;
@@ -87,13 +88,15 @@ int MQTTDeserialize_publish(unsigned char* dup, int* qos, unsigned char* retaine
 	MQTTHeader header;
 	unsigned char* curdata = buf;
 	unsigned char* enddata;
-	int rc = 0;
-	int mylen = 0;
+	int rc;
+	int mylen;
 
 	FUNC_ENTRY;
+	rc = 0;
 	header.byte = readChar(&curdata);
-	if (header.bits.type != PUBLISH)
+	if (header.bits.type != PUBLISH) {
 		goto exit;
+	}
 	*dup = header.bits.dup;
 	*qos = header.bits.qos;
 	*retained = header.bits.retain;
@@ -133,7 +136,7 @@ int MQTTDeserialize_ack(MQTT::MessageAck& msg, unsigned char* buf, int buflen) {
     unsigned char* curdata = buf;
     unsigned char* enddata;
     int rc;
-    int mylen = 0;
+    int mylen;
 
     FUNC_ENTRY;
     header.byte = readChar(&curdata);
@@ -170,8 +173,8 @@ int MQTTDeserialize_ack(unsigned char* packettype, unsigned char* dup, unsigned 
 	MQTTHeader header;
 	unsigned char* curdata = buf;
 	unsigned char* enddata;
-	int rc = 0;
-	int mylen = 0;
+	int rc;
+	int mylen;
 
 	FUNC_ENTRY;
 	header.byte = readChar(&curdata);
@@ -181,13 +184,16 @@ int MQTTDeserialize_ack(unsigned char* packettype, unsigned char* dup, unsigned 
 	curdata += (rc = MQTTPacket_decodeBuf(curdata, &mylen)); /* read remaining length */
 	enddata  = curdata + mylen;
 
-	if (enddata - curdata < 2)
+	if (enddata - curdata < 2) {
 		goto exit;
+	}
 	*packetid = readInt(&curdata);
 
 	rc = 1;
-exit:
+
+exit :
 	FUNC_EXIT_RC(rc);
-	return rc;
+
+	return (rc);
 }
 

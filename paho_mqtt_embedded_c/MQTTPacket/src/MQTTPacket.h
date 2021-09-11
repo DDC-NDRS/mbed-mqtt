@@ -72,16 +72,14 @@ typedef union
 #endif
 } MQTTHeader;
 
-typedef struct
-{
-	int len;
-	char* data;
+typedef struct {
+    int len;
+    char* data;
 } MQTTLenString;
 
-typedef struct
-{
-	char* cstring;
-	MQTTLenString lenstring;
+typedef struct {
+    char* cstring;
+    MQTTLenString lenstring;
 } MQTTString;
 
 #define MQTTString_initializer {NULL, {0, NULL}}

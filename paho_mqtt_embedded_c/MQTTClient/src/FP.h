@@ -175,25 +175,23 @@ public:
     /** Determine if an callback is currently hooked
      *  @return 1 if a method is hooked, 0 otherwise
      */
-    bool attached()
-    {
-        return obj_callback || c_callback;
+    bool attached() {
+        return (obj_callback || c_callback);
     }
 
     /** Release a function from the callback hook
      */
-    void detach()
-    {
+    void detach() {
         obj_callback = 0;
         c_callback = 0;
     }
 
-private:
+private :
 
     // empty type used for casting
     class FPtrDummy;
 
-    FPtrDummy *obj_callback;
+    FPtrDummy* obj_callback;
 
     /**
      *  @union Funciton
