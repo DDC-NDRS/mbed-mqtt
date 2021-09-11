@@ -14,11 +14,59 @@
  *    Ian Craggs - initial API and implementation and/or initial documentation
  *******************************************************************************/
 
+#include "MQTTTypeDef.hpp"
 #include "StackTrace.h"
-#include "MQTTPacket.h"
 #include <string.h>
 
 #define min(a, b) ((a < b) ? 1 : 0)
+
+/**
+  * Deserializes the supplied (wire) buffer into publish data
+  * @param MQTT::Message message parameter itself
+  * @param topicName returned MQTTString - the MQTT topic in the publish
+  * @param buf the raw buffer data, of the correct length determined by the remaining length field
+  * @param buflen the length in bytes of the data in the supplied buffer
+  * @return error code.  1 is success
+  */
+int MQTTDeserialize_publish(MQTT::Message& msg, MQTTString* topicName, unsigned char* buf, int buflen) {
+    MQTTHeader header;
+    unsigned char* curdata = buf;
+    unsigned char* enddata;
+    int rc = 0;
+    int mylen = 0;
+
+    FUNC_ENTRY;
+    header.byte = readChar(&curdata);
+    if (header.bits.type != PUBLISH) {
+        goto exit;
+    }
+    msg.dup = header.bits.dup;
+    msg.qos = static_cast<enum MQTT::QoS>(header.bits.qos);
+    msg.retained = header.bits.retain;
+
+    curdata += (rc = MQTTPacket_decodeBuf(curdata, &mylen));    /* read remaining length */
+    enddata  = curdata + mylen;
+
+    if (!readMQTTLenString(topicName, &curdata, enddata) ||
+        ((enddata - curdata) < 0)) {                            /* do we have enough data to read the protocol version byte? */
+        rc = 0;
+        goto exit;
+    }
+
+    if (msg.qos > MQTT::QOS0) {
+        msg.id = static_cast<unsigned short>(readInt(&curdata));
+    }
+
+    msg.payloadlen = enddata - curdata;
+    msg.payload    = curdata;
+    rc = 1;
+
+exit :
+    FUNC_EXIT_RC(rc);
+
+    return (rc);
+}
+
 
 /**
   * Deserializes the supplied (wire) buffer into publish data
@@ -34,9 +82,9 @@
   * @return error code.  1 is success
   */
 int MQTTDeserialize_publish(unsigned char* dup, int* qos, unsigned char* retained, unsigned short* packetid, MQTTString* topicName,
-		unsigned char** payload, int* payloadlen, unsigned char* buf, int buflen)
+                            unsigned char** payload, int* payloadlen, unsigned char* buf, int buflen)
 {
-	MQTTHeader header = {0};
+	MQTTHeader header;
 	unsigned char* curdata = buf;
 	unsigned char* enddata = NULL;
 	int rc = 0;
@@ -71,6 +119,42 @@ exit:
 }
 
 
+/**
+  * Deserializes the supplied (wire) buffer into an ack
+  * @param packettype returned integer - the MQTT packet type
+  * @param dup returned integer - the MQTT dup flag
+  * @param packetid returned integer - the MQTT packet identifier
+  * @param buf the raw buffer data, of the correct length determined by the remaining length field
+  * @param buflen the length in bytes of the data in the supplied buffer
+  * @return error code.  1 is success, 0 is failure
+  */
+int MQTTDeserialize_ack(MQTT::MessageAck& msg, unsigned char* buf, int buflen) {
+    MQTTHeader header;
+    unsigned char* curdata = buf;
+    unsigned char* enddata;
+    int rc;
+    int mylen = 0;
+
+    FUNC_ENTRY;
+    header.byte = readChar(&curdata);
+    msg.dup  = header.bits.dup;
+    msg.type = header.bits.type;
+
+    rc = MQTTPacket_decodeBuf(curdata, &mylen);
+    curdata += rc;                          /* read remaining length */
+    enddata  = curdata + mylen;
+
+    if ((enddata - curdata) < 2) {
+        goto exit;
+    }
+    msg.id = static_cast<unsigned short>(readInt(&curdata));
+
+    rc = 1;
+exit:
+    FUNC_EXIT_RC(rc);
+
+    return (rc);
+}
 
 /**
   * Deserializes the supplied (wire) buffer into an ack
@@ -83,11 +167,11 @@ exit:
   */
 int MQTTDeserialize_ack(unsigned char* packettype, unsigned char* dup, unsigned short* packetid, unsigned char* buf, int buflen)
 {
-	MQTTHeader header = {0};
+	MQTTHeader header;
 	unsigned char* curdata = buf;
 	unsigned char* enddata = NULL;
 	int rc = 0;
-	int mylen;
+	int mylen = 0;
 
 	FUNC_ENTRY;
 	header.byte = readChar(&curdata);

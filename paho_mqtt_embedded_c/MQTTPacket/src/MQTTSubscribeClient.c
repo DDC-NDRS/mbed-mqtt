@@ -25,14 +25,15 @@
   * @param topicFilters the array of topic filter strings to be used in the publish
   * @return the length of buffer needed to contain the serialized version of the packet
   */
-int MQTTSerialize_subscribeLength(int count, MQTTString topicFilters[])
-{
-	int i;
-	int len = 2; /* packetid */
+int MQTTSerialize_subscribeLength(int count, MQTTString topicFilters[]) {
+    int i;
+    int len = 2;                            /* packetid */
 
-	for (i = 0; i < count; ++i)
-		len += 2 + MQTTstrlen(topicFilters[i]) + 1; /* length + topic + req_qos */
-	return len;
+    for (i = 0; i < count; ++i) {
+        len += 2 + MQTTstrlen(topicFilters[i]) + 1; /* length + topic + req_qos */
+    }
+
+    return (len);
 }
 
 
@@ -48,41 +49,41 @@ int MQTTSerialize_subscribeLength(int count, MQTTString topicFilters[])
   * @return the length of the serialized data.  <= 0 indicates error
   */
 int MQTTSerialize_subscribe(unsigned char* buf, int buflen, unsigned char dup, unsigned short packetid, int count,
-		MQTTString topicFilters[], int requestedQoSs[])
-{
-	unsigned char *ptr = buf;
-	MQTTHeader header = {0};
-	int rem_len = 0;
-	int rc = 0;
-	int i = 0;
+                            MQTTString topicFilters[], int requestedQoSs[]) {
+    unsigned char* ptr = buf;
+    MQTTHeader header;
+    int rem_len;
+    int rc;
+    int i;
 
-	FUNC_ENTRY;
-	if (MQTTPacket_len(rem_len = MQTTSerialize_subscribeLength(count, topicFilters)) > buflen)
-	{
-		rc = MQTTPACKET_BUFFER_TOO_SHORT;
-		goto exit;
-	}
+    FUNC_ENTRY;
+    rem_len = MQTTSerialize_subscribeLength(count, topicFilters);
+    if (MQTTPacket_len(rem_len) > buflen) {
+        rc = MQTTPACKET_BUFFER_TOO_SHORT;
+        goto exit;
+    }
 
-	header.byte = 0;
-	header.bits.type = SUBSCRIBE;
-	header.bits.dup = dup;
-	header.bits.qos = 1;
-	writeChar(&ptr, header.byte); /* write header */
+    header.byte      = 0;
+    header.bits.type = SUBSCRIBE;
+    header.bits.dup  = dup;
+    header.bits.qos  = 1;
+    writeChar(&ptr, header.byte);           /* write header */
 
-	ptr += MQTTPacket_encode(ptr, rem_len); /* write remaining length */;
+    ptr += MQTTPacket_encode(ptr, rem_len); /* write remaining length */;
 
-	writeInt(&ptr, packetid);
+    writeInt(&ptr, packetid);
 
-	for (i = 0; i < count; ++i)
-	{
-		writeMQTTString(&ptr, topicFilters[i]);
-		writeChar(&ptr, requestedQoSs[i]);
-	}
+    for (i = 0; i < count; ++i) {
+        writeMQTTString(&ptr, topicFilters[i]);
+        writeChar(&ptr, requestedQoSs[i]);
+    }
 
-	rc = ptr - buf;
-exit:
-	FUNC_EXIT_RC(rc);
-	return rc;
+    rc = (ptr - buf);
+
+exit :
+    FUNC_EXIT_RC(rc);
+
+    return (rc);
 }
 
 
@@ -97,41 +98,43 @@ exit:
   * @param buflen the length in bytes of the data in the supplied buffer
   * @return error code.  1 is success, 0 is failure
   */
-int MQTTDeserialize_suback(unsigned short* packetid, int maxcount, int* count, int grantedQoSs[], unsigned char* buf, int buflen)
-{
-	MQTTHeader header = {0};
-	unsigned char* curdata = buf;
-	unsigned char* enddata = NULL;
-	int rc = 0;
-	int mylen;
+int MQTTDeserialize_suback(unsigned short* packetid, int maxcount, int* count, int grantedQoSs[], unsigned char* buf,
+                           int buflen) {
+    MQTTHeader header;
+    unsigned char* curdata = buf;
+    unsigned char* enddata;
+    int rc    = 0;
+    int mylen = 0;
+    int _cnt;
 
-	FUNC_ENTRY;
-	header.byte = readChar(&curdata);
-	if (header.bits.type != SUBACK)
-		goto exit;
+    FUNC_ENTRY;
+    header.byte = readChar(&curdata);
+    if (header.bits.type != SUBACK) {
+        goto exit;
+    }
 
-	curdata += (rc = MQTTPacket_decodeBuf(curdata, &mylen)); /* read remaining length */
-	enddata = curdata + mylen;
-	if (enddata - curdata < 2)
-		goto exit;
+    curdata += (rc = MQTTPacket_decodeBuf(curdata, &mylen)); /* read remaining length */
+    enddata  = curdata + mylen;
+    if ((enddata - curdata) < 2) {
+        goto exit;
+    }
 
-	*packetid = readInt(&curdata);
+    *packetid = readInt(&curdata);
 
-	*count = 0;
-	while (curdata < enddata)
-	{
-		if (*count > maxcount)
-		{
-			rc = -1;
-			goto exit;
-		}
-		grantedQoSs[(*count)++] = readChar(&curdata);
-	}
+    _cnt = 0;
+    while (curdata < enddata) {
+        if (_cnt > maxcount) {
+            rc = -1;
+            goto exit;
+        }
+        grantedQoSs[_cnt++] = readChar(&curdata);
+    }
 
-	rc = 1;
-exit:
-	FUNC_EXIT_RC(rc);
-	return rc;
+    rc = 1;
+
+exit :
+    FUNC_EXIT_RC(rc);
+    *count = _cnt;
+
+    return (rc);
 }
-
-

@@ -195,9 +195,8 @@ public:
     /** Is the client connected?
      *  @return flag - is the client connected or not?
      */
-    bool isConnected()
-    {
-        return isconnected;
+    bool isConnected(void) {
+        return (isconnected);
     }
     
 protected:
@@ -500,8 +499,7 @@ int MQTTSN::Client<Network, Timer, a, b>::yield(unsigned long timeout_ms)
 
 
 template<class Network, class Timer, int MAX_PACKET_SIZE, int b>
-int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::cycle(Timer& timer)
-{
+int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::cycle(Timer& timer) {
     /* get one piece of work off the wire and one pass through */
 
     // read the socket, see what work is due
@@ -510,62 +508,78 @@ int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::cycle(Timer& timer)
     int len = 0;
     unsigned char rc = SUCCESS;
 
-    switch (packet_type)
-    {
-        case MQTTSN_CONNACK:
-        case MQTTSN_PUBACK:
-        case MQTTSN_SUBACK:
-        case MQTTSN_REGACK:
+    switch (packet_type) {
+        case MQTTSN_CONNACK :
+        case MQTTSN_PUBACK :
+        case MQTTSN_SUBACK :
+        case MQTTSN_REGACK :
             break;
-        case MQTTSN_REGISTER:
-        {
+
+        case MQTTSN_REGISTER : {
             unsigned short topicid, packetid;
             MQTTSNString topicName;
+
             rc = MQTTSN_RC_ACCEPTED;
-            if (MQTTSNDeserialize_register(&topicid, &packetid, &topicName, readbuf, MAX_PACKET_SIZE) != 1)
+            if (MQTTSNDeserialize_register(&topicid, &packetid, &topicName, readbuf, MAX_PACKET_SIZE) != 1) {
                 goto exit;
+            }
+
             len = MQTTSNSerialize_regack(sendbuf, MAX_PACKET_SIZE, topicid, packetid, rc);
-            if (len <= 0)
+            if (len <= 0) {
                 rc = FAILURE;
-            else
+            }
+            else {
                 rc = sendPacket(len, timer);
+            }
             break;
         }
-        case MQTTSN_PUBLISH:
+
+        case MQTTSN_PUBLISH :
             MQTTSN_topicid topicid;
             Message msg;
-            if (MQTTSNDeserialize_publish((unsigned char*)&msg.dup, (int*)&msg.qos, (unsigned char*)&msg.retained, (unsigned short*)&msg.id, &topicid,
-                                 (unsigned char**)&msg.payload, (int*)&msg.payloadlen, readbuf, MAX_PACKET_SIZE) != 1)
+            if (MQTTSNDeserialize_publish((unsigned char*)&msg.dup, (int*)&msg.qos, (unsigned char*)&msg.retained,
+                                          (unsigned short*)&msg.id, &topicid, (unsigned char**)&msg.payload,
+                                          (int*)&msg.payloadlen, readbuf, MAX_PACKET_SIZE) != 1) {
                 goto exit;
+            }
+
 #if MQTTCLIENT_QOS2
             if (msg.qos != QOS2)
 #endif
                 deliverMessage(topicid, msg);
 #if MQTTCLIENT_QOS2
-            else if (isQoS2msgidFree(msg.id))
-            {
-                if (useQoS2msgid(msg.id))
+            else if (isQoS2msgidFree(msg.id)) {
+                if (useQoS2msgid(msg.id)) {
                     deliverMessage(topicid, msg);
-                else
+                }
+                else {
                     WARN("Maximum number of incoming QoS2 messages exceeded");
+                }
             }   
 #endif
 #if MQTTCLIENT_QOS1 || MQTTCLIENT_QOS2
-            if (msg.qos != QOS0)
-            {
-                if (msg.qos == QOS1)
+            if (msg.qos != QOS0) {
+                if (msg.qos == QOS1) {
                     len = MQTTSNSerialize_puback(sendbuf, MAX_PACKET_SIZE, topicid.data.id, msg.id, 0);
-                else if (msg.qos == QOS2)
+                }
+                else { // QOS2
                     len = MQTTSNSerialize_pubrec(sendbuf, MAX_PACKET_SIZE, msg.id);
-                if (len <= 0)
+                }
+
+                if (len <= 0) {
                     rc = FAILURE;
-                else
+                }
+                else {
                     rc = sendPacket(len, timer);
-                if (rc == FAILURE)
-                    goto exit; // there was a problem
+                }
+
+                if (rc == FAILURE) {
+                    goto exit;              // there was a problem
+                }
             }
             break;
 #endif
+
 #if MQTTCLIENT_QOS2
         case MQTTSN_PUBREC:
             unsigned short mypacketid;
@@ -587,10 +601,13 @@ int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::cycle(Timer& timer)
             break;
     }
     keepalive();
-exit:
-    if (rc == SUCCESS)
+
+exit :
+    if (rc == SUCCESS) {
         rc = packet_type;
-    return rc;
+    }
+
+    return (rc);
 }
 
 
@@ -624,135 +641,151 @@ exit:
 
 // only used in single-threaded mode where one command at a time is in process
 template<class Network, class Timer, int a, int b>
-int MQTTSN::Client<Network, Timer, a, b>::waitfor(int packet_type, Timer& timer)
-{
+int MQTTSN::Client<Network, Timer, a, b>::waitfor(int packet_type, Timer& timer) {
     int rc = FAILURE;
 
-    do
-    {
-        if (timer.expired())
-            break; // we timed out
-    }
-    while ((rc = cycle(timer)) != packet_type);
+    do {
+        if (timer.expired()) {
+            break;                          // we timed out
+        }
+    } while ((rc = cycle(timer)) != packet_type);
 
-    return rc;
+    return (rc);
 }
 
 
 template<class Network, class Timer, int MAX_PACKET_SIZE, int b>
-int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::connect(MQTTSNPacket_connectData& options)
-{
+int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::connect(MQTTSNPacket_connectData& options) {
     Timer connect_timer(command_timeout_ms);
     int rc = FAILURE;
-    int len = 0;
+    int len;
 
-    if (isconnected) // don't send connect packet again if we are already connected
+    if (isconnected) {                      // don't send connect packet again if we are already connected
         goto exit;
+    }
 
     this->duration = options.duration;
     this->cleansession = options.cleansession;
-    if ((len = MQTTSNSerialize_connect(sendbuf, MAX_PACKET_SIZE, &options)) <= 0)
-        goto exit;
-    if ((rc = sendPacket(len, connect_timer)) != SUCCESS)  // send the connect packet
-        goto exit; // there was a problem
 
-    if (this->duration > 0)
+    len = MQTTSNSerialize_connect(sendbuf, MAX_PACKET_SIZE, &options);
+    if (len <= 0) {
+        goto exit;
+    }
+
+    rc = sendPacket(len, connect_timer);
+    if (rc != SUCCESS) {                    // send the connect packet
+        goto exit;                          // there was a problem
+    }
+
+    if (this->duration > 0) {
         last_received.countdown(this->duration);
+    }
+
     // this will be a blocking call, wait for the connack
-    if (waitfor(MQTTSN_CONNACK, connect_timer) == MQTTSN_CONNACK)
-    {
+    if (waitfor(MQTTSN_CONNACK, connect_timer) == MQTTSN_CONNACK) {
         //unsigned char connack_rc = 255;
         int connack_rc = 255;
-        if (MQTTSNDeserialize_connack(&connack_rc, readbuf, MAX_PACKET_SIZE) == 1)
+        if (MQTTSNDeserialize_connack(&connack_rc, readbuf, MAX_PACKET_SIZE) == 1) {
             rc = connack_rc;
-        else
+        }
+        else {
             rc = FAILURE;
+        }
     }
-    else
+    else {
         rc = FAILURE;
-        
+    }
+
 #if MQTTCLIENT_QOS2
     // resend an inflight publish
-    if (inflightMsgid >0 && inflightQoS == QOS2 && pubrel)
-    {
-        if ((len = MQTTSerialize_ack(sendbuf, MAX_PACKET_SIZE, PUBREL, 0, inflightMsgid)) <= 0)
+    if (inflightMsgid >0 && inflightQoS == QOS2 && pubrel) {
+        if ((len = MQTTSerialize_ack(sendbuf, MAX_PACKET_SIZE, PUBREL, 0, inflightMsgid)) <= 0) {
             rc = FAILURE;
-        else
+        }
+        else {
             rc = publish(len, connect_timer, inflightQoS);
+        }
     }
     else
 #endif
 #if MQTTCLIENT_QOS1 || MQTTCLIENT_QOS2
-    if (inflightMsgid > 0)
-    {
+    if (inflightMsgid > 0) {
         memcpy(sendbuf, pubbuf, MAX_PACKET_SIZE);
         rc = publish(inflightLen, connect_timer, inflightQoS);
     }
 #endif
 
-exit:
-    if (rc == SUCCESS)
+exit :
+    if (rc == SUCCESS) {
         isconnected = true;
-    return rc;
+    }
+
+    return (rc);
 }
 
 
 template<class Network, class Timer, int MAX_PACKET_SIZE, int b>
-int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::connect()
-{
+int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::connect() {
     MQTTSNPacket_connectData default_options = MQTTSNPacket_connectData_initializer;
-    return connect(default_options);
+    int rc;
+
+    rc = connect(default_options);
+
+    return (rc);
 }
 
 
 template<class Network, class Timer, int MAX_PACKET_SIZE, int MAX_MESSAGE_HANDLERS>
-int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, MAX_MESSAGE_HANDLERS>::subscribe(MQTTSN_topicid& topicFilter, enum QoS qos, messageHandler messageHandler)
-{
-    int rc = FAILURE;
+int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, MAX_MESSAGE_HANDLERS>::subscribe(MQTTSN_topicid& topicFilter,
+                                                                                     enum QoS qos,
+                                                                                     messageHandler messageHandler) {
+    int rc;
     Timer timer(command_timeout_ms);
-    int len = 0;
+    int len;
 
-    if (!isconnected)
-        return FAILURE; // goto exit cannot cross variable initialization
-        
+    rc = FAILURE;
+    if (!isconnected) {
+        return (FAILURE);                   // goto exit cannot cross variable initialization
+    }
+
     bool freeHandler = false;
-    for (int i = 0; i < MAX_MESSAGE_HANDLERS; ++i)
-    {
-        if (messageHandlers[i].topicFilter == 0)
-        {
+    for (int i = 0; i < MAX_MESSAGE_HANDLERS; ++i) {
+        if (messageHandlers[i].topicFilter == 0) {
             freeHandler = true;
             break;
         }
     }
-    if (!freeHandler)
-    {                                 // No message handler free
+
+    if (!freeHandler) {                     // No message handler free
         rc = MAX_SUBSCRIPTIONS_EXCEEDED;
-        goto exit; 
+        goto exit;
     }
 
     len = MQTTSNSerialize_subscribe(sendbuf, MAX_PACKET_SIZE, 0, qos, packetid.getNext(), &topicFilter);
-    if (len <= 0)
+    if (len <= 0) {
         goto exit;
-    if ((rc = sendPacket(len, timer)) != SUCCESS) // send the subscribe packet
-        goto exit;             // there was a problem
+    }
 
-    if (waitfor(MQTTSN_SUBACK, timer) == MQTTSN_SUBACK)      // wait for suback
-    {
+    if ((rc = sendPacket(len, timer)) != SUCCESS) {             // send the subscribe packet
+        goto exit;             // there was a problem
+    }
+
+    if (waitfor(MQTTSN_SUBACK, timer) == MQTTSN_SUBACK) {       // wait for suback
         int grantedQoS = -1;
         unsigned short mypacketid;
         unsigned char rc;
-        if (MQTTSNDeserialize_suback(&grantedQoS, &topicFilter.data.id, &mypacketid, &rc, readbuf, MAX_PACKET_SIZE) != 1)
-            goto exit;
 
-        if (qos != grantedQoS)
+        if (MQTTSNDeserialize_suback(&grantedQoS, &topicFilter.data.id, &mypacketid, &rc, readbuf, MAX_PACKET_SIZE) != 1) {
             goto exit;
+        }
 
-        if (rc == MQTTSN_RC_ACCEPTED)
-        {
-            for (int i = 0; i < MAX_MESSAGE_HANDLERS; ++i)
-            {
-                if (messageHandlers[i].topicFilter == 0)
-                {
+        if (qos != grantedQoS) {
+            goto exit;
+        }
+
+        if (rc == MQTTSN_RC_ACCEPTED) {
+            for (int i = 0; i < MAX_MESSAGE_HANDLERS; ++i) {
+                if (messageHandlers[i].topicFilter == 0) {
                     messageHandlers[i].topicFilter = &topicFilter;
                     messageHandlers[i].fp.attach(messageHandler);
                     rc = 0;
@@ -761,118 +794,140 @@ int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, MAX_MESSAGE_HANDLERS>::subsc
             }
         }
     }
-    else
+    else {
         rc = FAILURE;
+    }
 
-exit:
-    if (rc != SUCCESS)
+exit :
+    if (rc != SUCCESS) {
         isconnected = false;
-    return rc;
+    }
+
+    return (rc);
 }
 
 
 template<class Network, class Timer, int MAX_PACKET_SIZE, int MAX_MESSAGE_HANDLERS>
-int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, MAX_MESSAGE_HANDLERS>::unsubscribe(MQTTSN_topicid& topicFilter)
-{
-    int rc = FAILURE;
+int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, MAX_MESSAGE_HANDLERS>::unsubscribe(MQTTSN_topicid& topicFilter) {
+    int rc;
+    int len;
     Timer timer(command_timeout_ms);
-    int len = 0;
 
-    if (!isconnected)
+    rc = FAILURE;
+    if (!isconnected) {
         goto exit;
-
-    if ((len = MQTTSNSerialize_unsubscribe(sendbuf, MAX_PACKET_SIZE, packetid.getNext(), &topicFilter)) <= 0)
-        goto exit;
-    if ((rc = sendPacket(len, timer)) != SUCCESS) // send the unsubscribe packet
-        goto exit; // there was a problem
-
-    if (waitfor(MQTTSN_UNSUBACK, timer) == MQTTSN_UNSUBACK)
-    {
-        unsigned short mypacketid;  // should be the same as the packetid above
-        if (MQTTSNDeserialize_unsuback(&mypacketid, readbuf, MAX_PACKET_SIZE) == 1)
-            rc = 0;
     }
-    else
-        rc = FAILURE;
 
-exit:
-    if (rc != SUCCESS)
+    len = MQTTSNSerialize_unsubscribe(sendbuf, MAX_PACKET_SIZE, packetid.getNext(), &topicFilter);
+    if (len <= 0) {
+        goto exit;
+    }
+
+    rc = sendPacket(len, timer);
+    if (rc != SUCCESS) {                    // send the unsubscribe packet
+        goto exit;                          // there was a problem
+    }
+
+    if (waitfor(MQTTSN_UNSUBACK, timer) == MQTTSN_UNSUBACK) {
+        unsigned short mypacketid;          // should be the same as the packetid above
+        if (MQTTSNDeserialize_unsuback(&mypacketid, readbuf, MAX_PACKET_SIZE) == 1) {
+            rc = 0;
+        }
+    }
+    else {
+        rc = FAILURE;
+    }
+
+exit :
+    if (rc != SUCCESS) {
         isconnected = false;
-    return rc;
+    }
+
+    return (rc);
 }
 
 
 template<class Network, class Timer, int MAX_PACKET_SIZE, int b>
-int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::publish(int len, Timer& timer, enum QoS qos)
-{
+int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::publish(int len, Timer& timer, enum QoS qos) {
     int rc;
-    
-    if ((rc = sendPacket(len, timer)) != SUCCESS) // send the publish packet
-        goto exit; // there was a problem
 
-#if MQTTCLIENT_QOS1 
-    if (qos == QOS1)
-    {
-        if (waitfor(MQTTSN_PUBACK, timer) == MQTTSN_PUBACK)
-        {
+    rc = sendPacket(len, timer);
+    if (rc != SUCCESS) {                    // send the publish packet
+        goto exit; // there was a problem
+    }
+
+#if MQTTCLIENT_QOS1
+    if (qos == QOS1) {
+        if (waitfor(MQTTSN_PUBACK, timer) == MQTTSN_PUBACK) {
             unsigned short mypacketid;
             unsigned char type;
-            if (MQTTSNDeserialize_ack(&type, &mypacketid, readbuf, MAX_PACKET_SIZE) != 1)
+
+            if (MQTTSNDeserialize_ack(&type, &mypacketid, readbuf, MAX_PACKET_SIZE) != 1) {
                 rc = FAILURE;
-            else if (inflightMsgid == mypacketid)
+            }
+            else if (inflightMsgid == mypacketid) {
                 inflightMsgid = 0;
+            }
         }
-        else
+        else {
             rc = FAILURE;
+        }
     }
 #elif MQTTCLIENT_QOS2
-    else if (qos == QOS2)
-    {
-        if (waitfor(PUBCOMP, timer) == PUBCOMP)
-        {
+    else if (qos == QOS2) {
+        if (waitfor(PUBCOMP, timer) == PUBCOMP) {
             unsigned short mypacketid;
             unsigned char type;
-            if (MQTTDeserialize_ack(&type, &mypacketid, readbuf, MAX_PACKET_SIZE) != 1)
+
+            if (MQTTDeserialize_ack(&type, &mypacketid, readbuf, MAX_PACKET_SIZE) != 1) {
                 rc = FAILURE;
-            else if (inflightMsgid == mypacketid)
+            }
+            else if (inflightMsgid == mypacketid) {
                 inflightMsgid = 0;
+            }
         }
-        else
+        else {
             rc = FAILURE;
+        }
     }
 #endif
 
-exit:
-    if (rc != SUCCESS)
+exit :
+    if (rc != SUCCESS) {
         isconnected = false;
-    return rc;
+    }
+
+    return (rc);
 }
 
 
 
 template<class Network, class Timer, int MAX_PACKET_SIZE, int b>
-int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::publish(MQTTSN_topicid& topic, void* payload, size_t payloadlen, unsigned short& id, enum QoS qos, bool retained)
-{
-    int rc = FAILURE;
+int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::publish(MQTTSN_topicid& topic, void* payload, size_t payloadlen,
+                                                                unsigned short& id, enum QoS qos, bool retained) {
+    int rc;
+    int len;
     Timer timer(command_timeout_ms);
-    int len = 0;
 
-    if (!isconnected)
+    rc = FAILURE;
+    if (!isconnected) {
         goto exit;
+    }
 
 #if MQTTCLIENT_QOS1 || MQTTCLIENT_QOS2
-    if (qos == QOS1 || qos == QOS2)
+    if ((qos == QOS1) || (qos == QOS2)) {
         id = packetid.getNext();
+    }
 #endif
 
     len = MQTTSNSerialize_publish(sendbuf, MAX_PACKET_SIZE, 0, qos, retained, id,
-              topic, (unsigned char*)payload, payloadlen);
-    if (len <= 0)
+                                  topic, (unsigned char*)payload, payloadlen);
+    if (len <= 0) {
         goto exit;
-        
+    }
+
 #if MQTTCLIENT_QOS1 || MQTTCLIENT_QOS2
-    if (!cleansession)
-    {
+    if (!cleansession) {
         memcpy(pubbuf, sendbuf, len);
         inflightMsgid = id;
         inflightLen = len;
@@ -884,38 +939,57 @@ int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::publish(MQTTSN_topicid& 
 #endif
         
     rc = publish(len, timer, qos);
-exit:
-    return rc;
+
+exit :
+    return (rc);
 }
 
 
 template<class Network, class Timer, int MAX_PACKET_SIZE, int b>
-int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::publish(MQTTSN_topicid& topicName, void* payload, size_t payloadlen, enum QoS qos, bool retained)
-{
+int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::publish(MQTTSN_topicid& topicName, void* payload,
+                                                                size_t payloadlen, enum QoS qos, bool retained) {
     unsigned short id = 0;  // dummy - not used for anything
-    return publish(topicName, payload, payloadlen, id, qos, retained);
+    int rc;
+
+    rc = publish(topicName, payload, payloadlen, id, qos, retained);
+
+    return (rc);
 }
 
 
 template<class Network, class Timer, int MAX_PACKET_SIZE, int b>
-int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::publish(MQTTSN_topicid& topicName, Message& message)
-{
-    return publish(topicName, message.payload, message.payloadlen, message.qos, message.retained);
+int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::publish(MQTTSN_topicid& topicName, Message& message) {
+    int rc;
+
+    rc = publish(topicName, message.payload, message.payloadlen, message.qos, message.retained);
+
+    return (rc);
 }
 
 
 template<class Network, class Timer, int MAX_PACKET_SIZE, int b>
-int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::disconnect(unsigned short duration)
-{
-    int rc = FAILURE;
-    Timer timer(command_timeout_ms);     // we might wait for incomplete incoming publishes to complete
-    int int_duration = (duration == 0) ? -1 : (int)duration;
-    int len = MQTTSNSerialize_disconnect(sendbuf, MAX_PACKET_SIZE, int_duration);
-    if (len > 0)
-        rc = sendPacket(len, timer);            // send the disconnect packet
+int MQTTSN::Client<Network, Timer, MAX_PACKET_SIZE, b>::disconnect(unsigned short duration) {
+    int rc;
+    int int_duration;
+    int len;
+    Timer timer(command_timeout_ms);        // we might wait for incomplete incoming publishes to complete
+
+    rc  = FAILURE;
+    if (duration == 0) {
+        int_duration = -1;
+    }
+    else {
+        int_duration = (int)duration;
+    }
+
+    len = MQTTSNSerialize_disconnect(sendbuf, MAX_PACKET_SIZE, int_duration);
+    if (len > 0) {
+        rc = sendPacket(len, timer);        // send the disconnect packet
+    }
 
     isconnected = false;
-    return rc;
+
+    return (rc);
 }
 
 

@@ -28,14 +28,15 @@
   * @param payloadlen the length of the payload to be sent
   * @return the length of buffer needed to contain the serialized version of the packet
   */
-int MQTTSerialize_publishLength(int qos, MQTTString topicName, int payloadlen)
-{
-	int len = 0;
+int MQTTSerialize_publishLength(int qos, MQTTString topicName, int payloadlen) {
+    int len = 0;
 
-	len += 2 + MQTTstrlen(topicName) + payloadlen;
-	if (qos > 0)
-		len += 2; /* packetid */
-	return len;
+    len += 2 + MQTTstrlen(topicName) + payloadlen;
+    if (qos > 0) {
+        len += 2;                           /* packetid */
+    }
+
+    return (len);
 }
 
 
@@ -53,19 +54,19 @@ int MQTTSerialize_publishLength(int qos, MQTTString topicName, int payloadlen)
   * @return the length of the serialized data.  <= 0 indicates error
   */
 int MQTTSerialize_publish(unsigned char* buf, int buflen, unsigned char dup, int qos, unsigned char retained, unsigned short packetid,
-		MQTTString topicName, unsigned char* payload, int payloadlen)
+        MQTTString topicName, unsigned char* payload, int payloadlen)
 {
     unsigned char* ptr = buf;
-	MQTTHeader header;
-	int rem_len = 0;
-	int rc = 0;
+    MQTTHeader header;
+    int rem_len = 0;
+    int rc = 0;
 
-	FUNC_ENTRY;
-	if (MQTTPacket_len(rem_len = MQTTSerialize_publishLength(qos, topicName, payloadlen)) > buflen)
-	{
-		rc = MQTTPACKET_BUFFER_TOO_SHORT;
-		goto exit;
-	}
+    FUNC_ENTRY;
+    rem_len = MQTTSerialize_publishLength(qos, topicName, payloadlen);
+    if (MQTTPacket_len(rem_len) > buflen) {
+        rc = MQTTPACKET_BUFFER_TOO_SHORT;
+        goto exit;
+    }
 
 	header.bits.type = PUBLISH;
 	header.bits.dup = dup;
