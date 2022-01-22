@@ -176,8 +176,7 @@ public :
         return (isconnected);
     }
 
-private:
-
+private :
     void closeSession();
     void cleanSession();
     int cycle(Timer& timer);
@@ -204,8 +203,7 @@ private:
 
     PacketId packetid;
 
-    struct MessageHandlers
-    {
+    struct MessageHandlers {
         const char* topicFilter;
         FP<void, MessageData&> fp;
     } messageHandlers[MAX_MESSAGE_HANDLERS];      // Message handlers are indexed by subscription topic
@@ -238,10 +236,10 @@ private:
 
 
 template<class Network, class Timer, int a, int MAX_MESSAGE_HANDLERS>
-void MQTT::Client<Network, Timer, a, MAX_MESSAGE_HANDLERS>::cleanSession()
-{
-    for (int i = 0; i < MAX_MESSAGE_HANDLERS; ++i)
+void MQTT::Client<Network, Timer, a, MAX_MESSAGE_HANDLERS>::cleanSession() {
+    for (int i = 0; i < MAX_MESSAGE_HANDLERS; ++i) {
         messageHandlers[i].topicFilter = 0;
+    }
 
 #if MQTTCLIENT_QOS1 || MQTTCLIENT_QOS2
     inflightMsgid = 0;
@@ -250,19 +248,21 @@ void MQTT::Client<Network, Timer, a, MAX_MESSAGE_HANDLERS>::cleanSession()
 
 #if MQTTCLIENT_QOS2
     pubrel = false;
-    for (int i = 0; i < MAX_INCOMING_QOS2_MESSAGES; ++i)
+    for (int i = 0; i < MAX_INCOMING_QOS2_MESSAGES; ++i) {
         incomingQoS2messages[i] = 0;
+    }
 #endif
 }
 
 
 template<class Network, class Timer, int a, int MAX_MESSAGE_HANDLERS>
-void MQTT::Client<Network, Timer, a, MAX_MESSAGE_HANDLERS>::closeSession()
-{
+void MQTT::Client<Network, Timer, a, MAX_MESSAGE_HANDLERS>::closeSession() {
     ping_outstanding = false;
-    isconnected = false;
-    if (cleansession)
+    isconnected      = false;
+
+    if (cleansession == true) {
         cleanSession();
+    }
 }
 
 
@@ -277,39 +277,34 @@ MQTT::Client<Network, Timer, a, MAX_MESSAGE_HANDLERS>::Client(Network& network, 
 
 #if MQTTCLIENT_QOS2
 template<class Network, class Timer, int a, int b>
-bool MQTT::Client<Network, Timer, a, b>::isQoS2msgidFree(unsigned short id)
-{
-    for (int i = 0; i < MAX_INCOMING_QOS2_MESSAGES; ++i)
-    {
-        if (incomingQoS2messages[i] == id)
+bool MQTT::Client<Network, Timer, a, b>::isQoS2msgidFree(unsigned short id) {
+    for (int i = 0; i < MAX_INCOMING_QOS2_MESSAGES; ++i) {
+        if (incomingQoS2messages[i] == id) {
             return false;
+        }
     }
+
     return true;
 }
 
 
 template<class Network, class Timer, int a, int b>
-bool MQTT::Client<Network, Timer, a, b>::useQoS2msgid(unsigned short id)
-{
-    for (int i = 0; i < MAX_INCOMING_QOS2_MESSAGES; ++i)
-    {
-        if (incomingQoS2messages[i] == 0)
-        {
+bool MQTT::Client<Network, Timer, a, b>::useQoS2msgid(unsigned short id) {
+    for (int i = 0; i < MAX_INCOMING_QOS2_MESSAGES; ++i) {
+        if (incomingQoS2messages[i] == 0) {
             incomingQoS2messages[i] = id;
             return true;
         }
     }
+
     return false;
 }
 
 
 template<class Network, class Timer, int a, int b>
-void MQTT::Client<Network, Timer, a, b>::freeQoS2msgid(unsigned short id)
-{
-    for (int i = 0; i < MAX_INCOMING_QOS2_MESSAGES; ++i)
-    {
-        if (incomingQoS2messages[i] == id)
-        {
+void MQTT::Client<Network, Timer, a, b>::freeQoS2msgid(unsigned short id) {
+    for (int i = 0; i < MAX_INCOMING_QOS2_MESSAGES; ++i) {
+        if (incomingQoS2messages[i] == id) {
             incomingQoS2messages[i] = 0;
             return;
         }
@@ -351,21 +346,24 @@ int MQTT::Client<Network, Timer, a, b>::sendPacket(int length, Timer& timer) {
     DEBUG("Rc %d from sending packet %s\r\n", rc,
         MQTTFormat_toServerString(printbuf, sizeof(printbuf), sendbuf, length));
 #endif
-    return rc;
+
+    return (rc);
 }
 
 
 template<class Network, class Timer, int a, int b>
 int MQTT::Client<Network, Timer, a, b>::decodePacket(int* value, int timeout) {
     unsigned char c;
-    int multiplier = 1;
-    int len = 0;
+    int multiplier;
+    int len;
     const int MAX_NO_OF_REMAINING_LENGTH_BYTES = 4;
+    int rc;
+    int tmp_val;
 
-    *value = 0;
+    multiplier = 1;
+    len = 0;
+    tmp_val = 0;
     do {
-        int rc = MQTTPACKET_READ_ERROR;
-
         if (++len > MAX_NO_OF_REMAINING_LENGTH_BYTES) {
             rc = MQTTPACKET_READ_ERROR; /* bad data */
             goto exit;
@@ -376,11 +374,13 @@ int MQTT::Client<Network, Timer, a, b>::decodePacket(int* value, int timeout) {
             goto exit;
         }
 
-        *value += (c & 0x7F) * multiplier;
+        tmp_val += (c & 0x7F) * multiplier;
         multiplier *= 128;
     } while ((c & 0x80) != 0);
 
 exit :
+    *value = tmp_val;
+
     return (len);
 }
 
@@ -393,15 +393,15 @@ exit :
  */
 template<class Network, class Timer, int MAX_MQTT_PACKET_SIZE, int b>
 int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, b>::readPacket(Timer& timer) {
-    int rc = FAILURE;
     MQTTHeader header;
-    int len = 0;
-    int rem_len = 0;
+    int len;
+    int rem_len;
+    int rc;
 
     /* 1. read the header byte.  This has the packet type in it */
     rc = ipstack.read(readbuf, 1, timer.left_ms());
     if (rc != 1) {
-        rc = 0; // timed out reading packet
+        rc = 0;                             // timed out reading packet
         goto exit;
     }
 
@@ -416,7 +416,7 @@ int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, b>::readPacket(Timer& tim
     }
 
     /* 3. read the rest of the buffer using a callback to supply the rest of the data */
-    if (rem_len > 0 && (ipstack.read(readbuf + len, rem_len, timer.left_ms()) != rem_len)) {
+    if ((rem_len > 0) && (ipstack.read(readbuf + len, rem_len, timer.left_ms()) != rem_len)) {
         rc = FAILURE;
         goto exit;
     }
@@ -444,39 +444,43 @@ exit :
 // # can only be at end
 // + and # can only be next to separator
 template<class Network, class Timer, int a, int b>
-bool MQTT::Client<Network, Timer, a, b>::isTopicMatched(char* topicFilter, MQTTString& topicName)
-{
+bool MQTT::Client<Network, Timer, a, b>::isTopicMatched(char* topicFilter, MQTTString& topicName) {
     char* curf = topicFilter;
     char* curn = topicName.lenstring.data;
     char* curn_end = curn + topicName.lenstring.len;
 
-    while (*curf && curn < curn_end)
-    {
-        if (*curn == '/' && *curf != '/')
+    while (*curf && curn < curn_end) {
+        if ((*curn == '/') && (*curf != '/')) {
             break;
-        if (*curf != '+' && *curf != '#' && *curf != *curn)
-            break;
-        if (*curf == '+')
-        {   // skip until we meet the next separator, or end of string
-            char* nextpos = curn + 1;
-            while (nextpos < curn_end && *nextpos != '/')
-                nextpos = ++curn + 1;
         }
-        else if (*curf == '#')
+
+        if ((*curf != '+') && (*curf != '#') && (*curf != *curn)) {
+            break;
+        }
+
+        if (*curf == '+') {                 // skip until we meet the next separator, or end of string
+            char* nextpos = curn + 1;
+            while ((nextpos < curn_end) && (*nextpos != '/')) {
+                nextpos = ++curn + 1;
+            }
+        }
+        else if (*curf == '#') {
             curn = curn_end - 1;    // skip until end of string
+        }
         curf++;
         curn++;
     };
 
-    return (curn == curn_end) && (*curf == '\0');
+    return ((curn == curn_end) && (*curf == '\0'));
 }
 
 
 
 template<class Network, class Timer, int a, int MAX_MESSAGE_HANDLERS>
 int MQTT::Client<Network, Timer, a, MAX_MESSAGE_HANDLERS>::deliverMessage(MQTTString& topicName, Message& message) {
-    int rc = FAILURE;
+    int rc;
 
+    rc = FAILURE;
     // we have to find the right message handler - indexed by topic
     for (int i = 0; i < MAX_MESSAGE_HANDLERS; ++i) {
         if ((messageHandlers[i].topicFilter != 0) &&
@@ -502,9 +506,10 @@ int MQTT::Client<Network, Timer, a, MAX_MESSAGE_HANDLERS>::deliverMessage(MQTTSt
 
 template<class Network, class Timer, int a, int b>
 int MQTT::Client<Network, Timer, a, b>::yield(unsigned long timeout_ms) {
-    int rc = SUCCESS;
     Timer timer;
+    int rc;
 
+    rc = SUCCESS;
     timer.countdown_ms(timeout_ms);
     while (timer.expired() == false) {
         if (cycle(timer) < 0) {
@@ -555,12 +560,13 @@ int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, b>::cycle(Timer& timer) {
 #endif
                 deliverMessage(topicName, msg);
 #if MQTTCLIENT_QOS2
-            else if (isQoS2msgidFree(msg.id))
-            {
-                if (useQoS2msgid(msg.id))
+            else if (isQoS2msgidFree(msg.id)) {
+                if (useQoS2msgid(msg.id)) {
                     deliverMessage(topicName, msg);
-                else
+                }
+                else {
                     WARN("Maximum number of incoming QoS2 messages exceeded");
+                }
             }
 #endif
 #if MQTTCLIENT_QOS1 || MQTTCLIENT_QOS2
@@ -622,7 +628,7 @@ exit:
     if (rc == SUCCESS) {
         rc = packet_type;
     }
-    else if (isconnected) {
+    else if (isconnected == true) {
         closeSession();
     }
 
@@ -631,49 +637,59 @@ exit:
 
 
 template<class Network, class Timer, int MAX_MQTT_PACKET_SIZE, int b>
-int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, b>::keepalive()
-{
-    int rc = SUCCESS;
+int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, b>::keepalive() {
+    int rc;
+    int len;
     static Timer ping_sent;
 
+    rc = SUCCESS;
     if (keepAliveInterval == 0) {
-        goto exit;
+        // pass
+    }
+    else {
+        if (ping_outstanding == true) {
+            if (ping_sent.expired() == true) {
+                rc = FAILURE; // session failure
+                #if defined(MQTT_DEBUG)
+                DEBUG("PINGRESP not received in keepalive interval\r\n");
+                #endif
+            }
+        }
+        else {
+            if ((last_sent.expired() == true) || (last_received.expired() == true)) {
+                Timer timer(1000);
+                len = MQTTSerialize_pingreq(sendbuf, MAX_MQTT_PACKET_SIZE);
+                if (len > 0) {
+                    rc = sendPacket(len, timer);                // send the ping packet
+                    if (rc == SUCCESS) {
+                        ping_outstanding = true;
+                        ping_sent.countdown(this->keepAliveInterval);
+                    }
+                }
+            }
+        }
     }
 
-    if (ping_outstanding) {
-        if (ping_sent.expired()) {
-            rc = FAILURE; // session failure
-            #if defined(MQTT_DEBUG)
-                DEBUG("PINGRESP not received in keepalive interval\r\n");
-            #endif
-        }
-    }
-    else if (last_sent.expired() || last_received.expired())
-    {
-        Timer timer(1000);
-        int len = MQTTSerialize_pingreq(sendbuf, MAX_MQTT_PACKET_SIZE);
-        if (len > 0 && (rc = sendPacket(len, timer)) == SUCCESS) // send the ping packet
-        {
-            ping_outstanding = true;
-            ping_sent.countdown(this->keepAliveInterval);
-        }
-    }
-exit:
-    return rc;
+    return (rc);
 }
 
 
 // only used in single-threaded mode where one command at a time is in process
 template<class Network, class Timer, int a, int b>
 int MQTT::Client<Network, Timer, a, b>::waitfor(int packet_type, Timer& timer) {
-    int rc = FAILURE;
+    int rc;
 
-    do {
-        if (timer.expired()) {
-            break; // we timed out
+    while (true) {
+        if (timer.expired() == true) {
+            rc = FAILURE;
+            break;
         }
+
         rc = cycle(timer);
-    } while ((rc != packet_type) && (rc >= 0));
+        if ((rc == packet_type) || (rc < 0)) {
+            break;
+        }
+    }
 
     return rc;
 }
@@ -682,26 +698,33 @@ int MQTT::Client<Network, Timer, a, b>::waitfor(int packet_type, Timer& timer) {
 template<class Network, class Timer, int MAX_MQTT_PACKET_SIZE, int b>
 int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, b>::connect(MQTTPacket_connectData& options, connackData& data) {
     Timer connect_timer(command_timeout_ms);
-    int rc = FAILURE;
-    int len = 0;
+    int rc;
+    int len;
 
-    if (isconnected) // don't send connect packet again if we are already connected
+    rc = FAILURE;
+    if (isconnected == true) {              // don't send connect packet again if we are already connected
         goto exit;
+    }
 
     this->keepAliveInterval = options.keepAliveInterval;
     this->cleansession = options.cleansession;
-    if ((len = MQTTSerialize_connect(sendbuf, MAX_MQTT_PACKET_SIZE, &options)) <= 0)
+
+    len = MQTTSerialize_connect(sendbuf, MAX_MQTT_PACKET_SIZE, &options);
+    if (len <= 0) {
         goto exit;
-    if ((rc = sendPacket(len, connect_timer)) != SUCCESS) {     // send the connect packet
+    }
+
+    rc = sendPacket(len, connect_timer);
+    if (rc != SUCCESS) {                    // send the connect packet
         goto exit;                          // there was a problem
     }
 
-    if (this->keepAliveInterval > 0)
+    if (this->keepAliveInterval > 0) {
         last_received.countdown(this->keepAliveInterval);
+    }
+
     // this will be a blocking call, wait for the connack
     if (waitfor(CONNACK, connect_timer) == CONNACK) {
-        data.rc = 0;
-        data.sessionPresent = false;
         if (MQTTDeserialize_connack((unsigned char*)&data.sessionPresent, (unsigned char*)&data.rc, readbuf,
                                     MAX_MQTT_PACKET_SIZE) == 1) {
             rc = data.rc;
@@ -715,13 +738,14 @@ int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, b>::connect(MQTTPacket_co
     }
 
 #if MQTTCLIENT_QOS2
-    // resend any inflight publish
-    if (inflightMsgid > 0 && inflightQoS == QOS2 && pubrel)
-    {
-        if ((len = MQTTSerialize_ack(sendbuf, MAX_MQTT_PACKET_SIZE, PUBREL, 0, inflightMsgid)) <= 0)
+    // Resend any inflight publish
+    if (inflightMsgid > 0 && inflightQoS == QOS2 && pubrel) {
+        if ((len = MQTTSerialize_ack(sendbuf, MAX_MQTT_PACKET_SIZE, PUBREL, 0, inflightMsgid)) <= 0) {
             rc = FAILURE;
-        else
+        }
+        else {
             rc = publish(len, connect_timer, inflightQoS);
+        }
     }
     else
 #endif
@@ -780,6 +804,7 @@ int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, MAX_MESSAGE_HANDLERS>::se
                 messageHandlers[i].topicFilter = 0;
                 messageHandlers[i].fp.detach();
             }
+
             rc = SUCCESS;                                       // return i when adding new subscription
             break;
         }
@@ -811,10 +836,10 @@ int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, MAX_MESSAGE_HANDLERS>::su
                                                                                         enum QoS qos,
                                                                                         messageHandler messageHandler,
                                                                                         subackData& data) {
-    int rc;
-    int len;
     Timer timer(command_timeout_ms);
     MQTTString topic = {(char*)topicFilter, {0, 0}};
+    int len;
+    int rc;
 
     rc = FAILURE;
     if (!isconnected) {
@@ -834,7 +859,7 @@ int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, MAX_MESSAGE_HANDLERS>::su
     if (waitfor(SUBACK, timer) == SUBACK) {                     // wait for suback
         int count;
         unsigned short mypacketid;
-        data.grantedQoS = 0;
+
         if (MQTTDeserialize_suback(&mypacketid, 1, &count, &data.grantedQoS, readbuf, MAX_MQTT_PACKET_SIZE) == 1) {
             if (data.grantedQoS != 0x80) {
                 rc = setMessageHandler(topicFilter, messageHandler);
@@ -869,11 +894,12 @@ int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, MAX_MESSAGE_HANDLERS>::su
 
 template<class Network, class Timer, int MAX_MQTT_PACKET_SIZE, int MAX_MESSAGE_HANDLERS>
 int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, MAX_MESSAGE_HANDLERS>::unsubscribe(const char* topicFilter) {
-    int rc = FAILURE;
     Timer timer(command_timeout_ms);
     MQTTString topic = {(char*)topicFilter, {0, 0}};
     int len;
+    int rc;
 
+    rc = FAILURE;
     if (isconnected == false) {
         goto exit;
     }
@@ -966,11 +992,12 @@ template<class Network, class Timer, int MAX_MQTT_PACKET_SIZE, int b>
 int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, b>::publish(const char* topicName, void* payload,
                                                                    size_t payloadlen, unsigned short& id, enum QoS qos,
                                                                    bool retained) {
-    int rc = FAILURE;
     Timer timer(command_timeout_ms);
     MQTTString topicString = MQTTString_initializer;
     int len;
+    int rc;
 
+    rc = FAILURE;
     if (isconnected == false) {
         goto exit;
     }
@@ -990,7 +1017,7 @@ int MQTT::Client<Network, Timer, MAX_MQTT_PACKET_SIZE, b>::publish(const char* t
     }
 
     #if MQTTCLIENT_QOS1 || MQTTCLIENT_QOS2
-    if (!cleansession) {
+    if (cleansession == false) {
         memcpy(pubbuf, sendbuf, len);
         inflightMsgid = id;
         inflightLen = len;
